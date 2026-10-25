@@ -1,0 +1,39 @@
+name: CD - Lead-Engine VM (Dagster)
+
+# Nach jedem Push auf main holt die VM den neuen Stand (git), führt dbt deps + dbt parse aus
+# und lädt Dagster neu (/opt/lead-engine/deploy.sh). Der SSH-Schlüssel darf auf der VM
+# ausschließlich dieses Skript ausführen (authorized_keys: command=...,restrict).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'models/**'
+      - 'macros/**'
+      - 'seeds/**'
+      - 'snapshots/**'
+      - 'tests/**'
+      - 'dbt_project.yml'
+      - 'packages.yml'
+      - 'package-lock.yml'
+      - 'scripts/lead_engine/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-lead-engine-vm
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy auf Lead-Engine-VM
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: SSH vorbereiten
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.LEAD_ENGINE_VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.LEAD_ENGINE_VM_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: deploy.sh auf der VM ausführen
+        run: ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes root@${{ secrets.LEAD_ENGINE_VM_HOST }}
