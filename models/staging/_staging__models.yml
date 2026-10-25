@@ -1,2 +1,69 @@
 version: 2
-models: []
+
+models:
+  - name: stg_lead_engine__karriere_stelle
+    description: "Staging karriere.at (Lead-Engine): eine Zeile je Lauf und Anzeigen-ID. BK Stelle stelle_bk, BK Firma firma_bk."
+    columns: &stg_stelle_columns
+      - name: hk_stelle
+        description: "Hash Key Stelle (collision_code, stelle_bk)"
+        data_tests: [not_null]
+      - name: hk_firma
+        description: "Hash Key Firma (collision_code, firma_bk)"
+        data_tests: [not_null]
+      - name: hk_link_stelle_firma
+        data_tests: [not_null]
+      - name: stelle_bk
+        description: "Business Key Stelle"
+        data_tests: [not_null]
+      - name: firma_bk
+        description: "Business Key Firma ('-1' = anonym/unbekannt)"
+        data_tests: [not_null]
+      - name: dss_business_key
+        data_tests: [not_null]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [run_id, stelle_bk]
+
+  - name: stg_lead_engine__theirstack_stelle
+    description: "Staging TheirStack (Lead-Engine): eine Zeile je Lauf und Anzeigen-ID (id als Text)."
+    columns: *stg_stelle_columns
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [run_id, stelle_bk]
+
+  - name: stg_lead_engine__website_stelle
+    description: "Staging Firmenwebsites (Lead-Engine): eine Zeile je Lauf, Firma und normalisiertem Titel. BK Stelle = Domain|Titel."
+    columns: *stg_stelle_columns
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [run_id, stelle_bk]
+
+  - name: stg_lead_engine__karriere_stelle__firma
+    description: "FK-Staging: Firma aus karriere-Anzeigen (dss_business_key der Firma), je Firma und Lauf dedupliziert."
+    columns: &stg_firma_columns
+      - name: hk_firma
+        data_tests: [not_null]
+      - name: firma_bk
+        data_tests: [not_null]
+      - name: dss_business_key
+        data_tests: [not_null]
+
+  - name: stg_lead_engine__theirstack_stelle__firma
+    description: "FK-Staging: Firma aus TheirStack-Anzeigen (dss_business_key der Firma), je Firma und Lauf dedupliziert."
+    columns: *stg_firma_columns
+
+  - name: stg_lead_engine__website_stelle__firma
+    description: "FK-Staging: Firma (Domain) aus Website-Anzeigen."
+    columns: *stg_firma_columns
+
+  - name: base_lead_engine__karriere_stelle
+    description: "Base-View: OPENJSON-Zerlegung des karriere-Payloads, dedupliziert je Lauf und Anzeigen-ID."
+  - name: base_lead_engine__theirstack_stelle
+    description: "Base-View: OPENJSON-Zerlegung des TheirStack-Payloads, dedupliziert je Lauf und Anzeigen-ID."
+  - name: base_lead_engine__website_stelle
+    description: "Base-View: Website-Payload, dedupliziert je Lauf, Domain und normalisiertem Titel."
+  - name: base_lead_engine__lauf_abfrage
+    description: "Monitoring: eine Zeile je Lauf und Abfrage aus dem Laufprotokoll (items gegen total_reported, truncated, error)."

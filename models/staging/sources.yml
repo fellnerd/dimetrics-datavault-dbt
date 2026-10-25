@@ -5,3 +5,14 @@ sources:
     database: "{{ target.database }}"
     schema: stg
     tables: []
+
+  - name: lead_engine
+    description: Landing-Tabellen des Lead-Engine-Collectors (per dlt aus dem Storage Account geladen, scripts/lead_engine/load_landing.py)
+    database: "{{ target.database }}"
+    schema: landing
+    tables:
+      - name: lead_engine_datei
+        description: Eine Zeile je Landing-Datei des Lead-Engine-Collectors (schema lead-engine.landing.v1)
+        loaded_at_field: fetched_at
+      - name: lead_engine_lauf
+        description: Laufprotokolle des Collectors (schema lead-engine.run.v1)

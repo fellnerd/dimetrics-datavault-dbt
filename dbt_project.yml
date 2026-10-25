@@ -76,6 +76,10 @@ models:
     staging:
       +schema: stg
       +materialized: view
+    # Base-Views: zerlegen Landing-JSON (OPENJSON) vor dem Staging, ohne Hashes/dss_*
+    base:
+      +schema: stg
+      +materialized: view
     raw_vault:
       # ===== COMMON (Schema: vault) =====
       # Cross-source objects merged from multiple systems

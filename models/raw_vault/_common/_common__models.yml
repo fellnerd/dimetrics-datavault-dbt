@@ -1,0 +1,83 @@
+version: 2
+
+models:
+  - name: hub_stelle
+    description: "Hub Stelle (Stellenanzeige), quellenuebergreifend. BK: collision_code + stelle_bk."
+    columns:
+      - name: hk_stelle
+        data_type: "CHAR(64)"
+        data_tests: [not_null, unique]
+      - name: stelle_bk
+        data_tests: [not_null]
+      - name: dss_business_key
+        data_tests: [not_null]
+      - name: dss_load_date
+        data_type: "DATETIME2(6)"
+      - name: dss_record_source
+        data_type: "VARCHAR(50)"
+
+  - name: hub_firma
+    description: "Hub Firma, quellenuebergreifend. BK: collision_code + firma_bk ('-1' = unbekannt)."
+    columns:
+      - name: hk_firma
+        data_type: "CHAR(64)"
+        data_tests: [not_null, unique]
+      - name: firma_bk
+        data_tests: [not_null]
+      - name: dss_business_key
+        data_tests: [not_null]
+      - name: dss_load_date
+        data_type: "DATETIME2(6)"
+      - name: dss_record_source
+        data_type: "VARCHAR(50)"
+
+  - name: link_stelle_firma
+    description: "Link Stelle - Firma."
+    columns:
+      - name: hk_link_stelle_firma
+        data_type: "CHAR(64)"
+        data_tests: [not_null, unique]
+      - name: hk_stelle
+        data_tests: [not_null]
+      - name: hk_firma
+        data_tests: [not_null]
+
+  - name: sat_stelle__karriere
+    description: "Attribute der Stelle aus karriere.at."
+    columns: &sat_stelle_columns
+      - name: hk_stelle
+        data_tests: [not_null]
+      - name: hashdiff
+        data_tests: [not_null]
+
+  - name: sat_stelle__theirstack
+    description: "Attribute der Stelle aus TheirStack."
+    columns: *sat_stelle_columns
+
+  - name: sat_stelle__website
+    description: "Attribute der Stelle von Firmenwebsites (Titel, URL)."
+    columns: *sat_stelle_columns
+
+  - name: sat_firma__karriere
+    description: "Firmenattribute aus karriere.at."
+    columns: &sat_firma_columns
+      - name: hk_firma
+        data_tests: [not_null]
+      - name: hashdiff
+        data_tests: [not_null]
+
+  - name: sat_firma__theirstack
+    description: "Firmenattribute aus TheirStack."
+    columns: *sat_firma_columns
+
+  - name: sat_stelle_sichtung__karriere
+    description: "Sichtungs-Satellit: je Lauf eine Zeile (zuletzt gesehen / nicht mehr online), Quelle karriere."
+    columns: *sat_stelle_columns
+
+  - name: sat_stelle_sichtung__theirstack
+    description: "Sichtungs-Satellit, Quelle TheirStack."
+    columns: *sat_stelle_columns
+
+  - name: sat_stelle_sichtung__website
+    description: "Sichtungs-Satellit, Quelle Website."
+    columns: *sat_stelle_columns

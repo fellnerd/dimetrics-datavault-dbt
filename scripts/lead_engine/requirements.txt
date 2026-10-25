@@ -1,0 +1,2 @@
+# Ladestrecke Lead-Engine (eigenes venv, getrennt von dbt, siehe README.md)
+dlt[mssql,az]==1.31.0
