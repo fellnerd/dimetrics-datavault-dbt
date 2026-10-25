@@ -4,12 +4,15 @@
     Grain: eine Zeile je Lauf (run_id) und Anzeigen-ID
     Payload: $.data.jobsSearchList.activeItems.items[*].jobsItem
     Version: 2026-10-25 V1.0 Initialversion
+    Version: 2026-10-25 V1.1 profil_ids (Suchprofil, das die Stelle im Lauf gefunden hat)
 #}
 {{ config(materialized='view') }}
 
 with items as (
     select
         f.run_id, f.query_id, f.fetched_at, f.file_path,
+        -- Suchprofil aus dem Landing-Umschlag; aeltere Dateien ohne Profil = 'data-bi'
+        coalesce(json_value(f.query_params, '$.profil_id'), 'data-bi') as profil_id,
         j.*
     from {{ source('lead_engine', 'lead_engine_datei') }} f
     cross apply openjson(f.payload, '$.data.jobsSearchList.activeItems.items') it
@@ -41,6 +44,13 @@ queries as (
     group by run_id, job_id
 ),
 
+profile as (
+    select run_id, job_id,
+           string_agg(profil_id, ',') within group (order by profil_id) as profil_ids
+    from (select distinct run_id, job_id, profil_id from items) d
+    group by run_id, job_id
+),
+
 ranked as (
     select i.*,
            row_number() over (partition by i.run_id, i.job_id order by i.fetched_at, i.file_path) as rn
@@ -56,6 +66,7 @@ select
     r.employment_types, r.salary, r.is_home_office, r.is_active, r.pushed_job,
     r.company_name, r.company_slug, r.company_size, r.company_main_location, r.company_link,
     q.query_ids,
+    p.profil_ids,
     (select string_agg(json_value(l.[value], '$.name'), ', ')
        from openjson(r.locations_json) l) as locations,
     r.date_text,
@@ -71,4 +82,5 @@ select
     end as posted_date
 from ranked r
 join queries q on q.run_id = r.run_id and q.job_id = r.job_id
+join profile p on p.run_id = r.run_id and p.job_id = r.job_id
 where r.rn = 1

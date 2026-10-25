@@ -1,6 +1,17 @@
 version: 2
 
-models: []
+models:
+  - name: bv_stelle_neu
+    description: |
+      Neue Leads (virtuelle View): Stellen, die im jüngsten Lauf ihrer Quelle erstmals aufgetaucht sind.
+      Grain: 1 Zeile je Stelle und Quelle. Abfrage z. B. `SELECT * FROM vault.bv_stelle_neu ORDER BY erstmals_gesehen DESC`.
+    columns:
+      - name: hk_stelle
+        data_tests: [not_null, unique]
+      - name: quelle
+        data_tests: [not_null]
+      - name: run_id
+        data_tests: [not_null]
   # =============================================================================
   # POINT-IN-TIME TABLES
   # =============================================================================

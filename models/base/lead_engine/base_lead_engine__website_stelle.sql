@@ -6,12 +6,15 @@
     BK Stelle: Domain|normalisierter Titel (die Quelle hat keine Anzeigen-ID);
                ein geaenderter Titel ergibt eine neue Stelle.
     Version: 2026-10-25 V1.0 Initialversion
+    Version: 2026-10-25 V1.1 profil_ids (Suchprofil, das die Stelle im Lauf gefunden hat)
 #}
 {{ config(materialized='view') }}
 
 with items as (
     select
         f.run_id, f.query_id, f.fetched_at, f.file_path,
+        -- Suchprofil aus dem Landing-Umschlag; aeltere Dateien ohne Profil = 'data-bi'
+        coalesce(json_value(f.query_params, '$.profil_id'), 'data-bi') as profil_id,
         json_value(f.payload, '$.company.name')   as company_name,
         json_value(f.payload, '$.company.url')    as company_url,
         j.title, j.url
@@ -41,6 +44,13 @@ queries as (
     group by run_id, company_domain, title_norm
 ),
 
+profile as (
+    select run_id, company_domain, title_norm,
+           string_agg(profil_id, ',') within group (order by profil_id) as profil_ids
+    from (select distinct run_id, company_domain, title_norm, profil_id from normalized) d
+    group by run_id, company_domain, title_norm
+),
+
 ranked as (
     select n.*,
            row_number() over (partition by n.run_id, n.company_domain, n.title_norm
@@ -56,9 +66,13 @@ select
     coalesce(r.company_domain, '-1')                            as firma_bk,
     r.title, r.url,
     r.company_name,
-    q.query_ids
+    q.query_ids,
+    p.profil_ids
 from ranked r
 join queries q on q.run_id = r.run_id
              and q.title_norm = r.title_norm
              and (q.company_domain = r.company_domain or (q.company_domain is null and r.company_domain is null))
+join profile p on p.run_id = r.run_id
+             and p.title_norm = r.title_norm
+             and (p.company_domain = r.company_domain or (p.company_domain is null and r.company_domain is null))
 where r.rn = 1

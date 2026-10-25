@@ -7,6 +7,7 @@
             hd_stelle__karriere -> sat_stelle__karriere · hd_firma__karriere -> sat_firma__karriere
             hd_stelle_sichtung__karriere -> sat_stelle_sichtung__karriere
     Version: 2026-10-25 V1.0 Initialversion
+    Version: 2026-10-25 V1.1 profil_ids (Suchprofil, das die Stelle im Lauf gefunden hat)
 #}
 {%- set yaml_metadata -%}
 source_model: base_lead_engine__karriere_stelle
@@ -28,7 +29,7 @@ hashed_columns:
     columns: [company_name, company_slug, company_size, company_main_location, company_link]
   hd_stelle_sichtung__karriere:
     is_hashdiff: true
-    columns: [run_id, query_ids]
+    columns: [run_id, query_ids, profil_ids]
 {%- endset -%}
 
 {{ automate_dv.stage(**fromyaml(yaml_metadata)) }}

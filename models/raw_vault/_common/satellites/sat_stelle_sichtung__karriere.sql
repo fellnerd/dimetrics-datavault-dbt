@@ -2,8 +2,10 @@
     Satellite: sat_stelle_sichtung__karriere (Sichtungs-Satellit)
     Parent Hub: hub_stelle
     Source: stg_lead_engine__karriere_stelle
-    Payload: run_id, query_ids. run_id aendert sich je Lauf, daher eine Zeile je Lauf -> "zuletzt gesehen".
+    Payload: run_id, query_ids, profil_ids. run_id aendert sich je Lauf, daher eine Zeile je Lauf -> "zuletzt gesehen".
     Version: 2026-10-25 V1.0 Initialversion
+    Version: 2026-10-25 V1.1 profil_ids (Suchprofil, das die Stelle im Lauf gefunden hat)
+             Neue Payload-Spalte per on_schema_change append_new_columns; aeltere Zeilen NULL.
 #}
 
 {{ config(
@@ -24,6 +26,7 @@ src_hashdiff:
 src_payload:
   - run_id
   - query_ids
+  - profil_ids
 src_extra_columns:
   - "dss_create_datetime"
 src_ldts: "dss_load_date"

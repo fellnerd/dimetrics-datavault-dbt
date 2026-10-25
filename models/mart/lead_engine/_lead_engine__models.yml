@@ -39,8 +39,12 @@ models:
         data_tests: [not_null]
 
   - name: fakt_stelle_sichtung
-    description: "Fakt: 1 Zeile je Stelle und Lauf (Sichtung). Measures anzahl_sichtungen, anzahl_abfragen."
+    description: "Fakt: 1 Zeile je Stelle, Lauf und Suchprofil (Sichtung). Measures anzahl_sichtungen, anzahl_abfragen. profil_id = Suchprofil (degenerierte Dimension); anzahl_sichtungen nur je profil_id summieren."
     columns:
+      - name: profil_id
+        description: "Suchprofil aus der Suchprofil-Tabelle (z. B. data-bi, online-marketing); vor 25.10.2026 = data-bi."
+        data_tests:
+          - not_null
       - name: stelle_key
         data_tests:
           - not_null

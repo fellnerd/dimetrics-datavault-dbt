@@ -7,6 +7,7 @@
             hd_stelle__website -> sat_stelle__website
             hd_stelle_sichtung__website -> sat_stelle_sichtung__website
     Version: 2026-10-25 V1.0 Initialversion
+    Version: 2026-10-25 V1.1 profil_ids (Suchprofil, das die Stelle im Lauf gefunden hat)
 #}
 {%- set yaml_metadata -%}
 source_model: base_lead_engine__website_stelle
@@ -25,7 +26,7 @@ hashed_columns:
     columns: [title, url]
   hd_stelle_sichtung__website:
     is_hashdiff: true
-    columns: [run_id, query_ids]
+    columns: [run_id, query_ids, profil_ids]
 {%- endset -%}
 
 {{ automate_dv.stage(**fromyaml(yaml_metadata)) }}
