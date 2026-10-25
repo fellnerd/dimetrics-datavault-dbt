@@ -1,0 +1,50 @@
+erDiagram
+    dim_stelle  ||--o{ fakt_stelle : stelle_key
+    dim_firma   ||--o{ fakt_stelle : firma_key
+    dim_quelle  ||--o{ fakt_stelle : quelle_key
+    dim_date    ||--o{ fakt_stelle : datum_key
+    dim_stelle  ||--o{ fakt_stelle_sichtung : stelle_key
+    dim_firma   ||--o{ fakt_stelle_sichtung : firma_key
+    dim_quelle  ||--o{ fakt_stelle_sichtung : quelle_key
+    dim_date    ||--o{ fakt_stelle_sichtung : datum_key
+
+    fakt_stelle {
+        bigint stelle_key FK
+        bigint firma_key FK
+        bigint quelle_key FK
+        int datum_key FK "erste Sichtung"
+        int zuletzt_gesehen_datum_key FK
+        int anzahl_laeufe
+        int tage_sichtbar
+        int ist_online
+    }
+    fakt_stelle_sichtung {
+        bigint stelle_key FK
+        bigint firma_key FK
+        bigint quelle_key FK
+        int datum_key FK
+        string run_id "degenerate"
+        int anzahl_sichtungen
+        int anzahl_abfragen
+    }
+    dim_stelle {
+        bigint stelle_key PK
+        string stelle_id
+        string stelle_code
+        string stelle_name
+        string firma_name "Attribut"
+        string quelle_name "Attribut"
+    }
+    dim_firma {
+        bigint firma_key PK
+        string firma_id
+        string firma_code
+        string firma_name
+        string quelle_name "Attribut"
+    }
+    dim_quelle {
+        bigint quelle_key PK
+        string quelle_id
+        string quelle_code
+        string quelle_name
+    }

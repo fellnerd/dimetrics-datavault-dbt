@@ -112,3 +112,8 @@ models:
         +schema: mart
         +materialized: table
         +as_columnstore: false
+      # ===== DOMAIN (Schema: mart_lead_engine) =====
+      lead_engine:
+        +schema: mart_lead_engine
+        +materialized: table
+        +as_columnstore: false

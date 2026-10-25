@@ -1,0 +1,95 @@
+version: 2
+
+models:
+  - name: dim_quelle
+    description: "Dimension Quelle (karriere.at, TheirStack, Firmenwebsite). 1 Zeile je Quelle + Unbekannt-Zeile."
+    columns:
+      - name: quelle_key
+        data_type: BIGINT
+        data_tests: [not_null, unique]
+      - name: quelle_code
+        data_tests: [not_null]
+      - name: quelle_name
+        data_tests: [not_null]
+
+  - name: dim_firma
+    description: "Dimension Firma. 1 Zeile je Firma und Quelle, Unbekannt-Zeile -1. Firmen quellenübergreifend noch nicht zusammengeführt (Same-as-Link folgt)."
+    columns:
+      - name: firma_key
+        data_type: BIGINT
+        data_tests: [not_null, unique]
+      - name: firma_id
+        data_tests: [not_null]
+      - name: firma_code
+        data_tests: [not_null]
+      - name: firma_name
+        data_tests: [not_null]
+
+  - name: dim_stelle
+    description: "Dimension Stelle (Anzeige), aktueller Stand je Stelle und Quelle. Firma nur als Attribut (kein firma_key)."
+    columns:
+      - name: stelle_key
+        data_type: BIGINT
+        data_tests: [not_null, unique]
+      - name: stelle_id
+        data_tests: [not_null]
+      - name: stelle_code
+        data_tests: [not_null]
+      - name: stelle_name
+        data_tests: [not_null]
+
+  - name: fakt_stelle_sichtung
+    description: "Fakt: 1 Zeile je Stelle und Lauf (Sichtung). Measures anzahl_sichtungen, anzahl_abfragen."
+    columns:
+      - name: stelle_key
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_stelle'), field: stelle_key}}
+      - name: firma_key
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_firma'), field: firma_key}}
+      - name: quelle_key
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_quelle'), field: quelle_key}}
+      - name: datum_key
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_date'), field: date_key}}
+
+  - name: fakt_stelle
+    description: "Fakt: 1 Zeile je Stelle und Quelle (Lebenszyklus). datum_key = erste Sichtung, ist_online = im jüngsten Lauf der Quelle noch gefunden."
+    columns:
+      - name: stelle_key
+        data_tests:
+          - not_null
+          - unique
+          - relationships: {arguments: {to: ref('dim_stelle'), field: stelle_key}}
+      - name: firma_key
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_firma'), field: firma_key}}
+      - name: quelle_key
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_quelle'), field: quelle_key}}
+      - name: datum_key
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_date'), field: date_key}}
+      - name: zuletzt_gesehen_datum_key
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_date'), field: date_key}}
+
+  - name: dim_quelle_v
+    description: "Publizierte View auf dim_quelle."
+  - name: dim_firma_v
+    description: "Publizierte View auf dim_firma."
+  - name: dim_stelle_v
+    description: "Publizierte View auf dim_stelle."
+  - name: fakt_stelle_sichtung_v
+    description: "Publizierte View auf fakt_stelle_sichtung."
+  - name: fakt_stelle_v
+    description: "Publizierte View auf fakt_stelle."

@@ -22,6 +22,7 @@ Alle fachlich oder technisch relevanten Änderungen an Modellen, Macros, Pipelin
 
 | Datum | Version | Bereich | Änderung | Ticket/Commit |
 |-------|---------|---------|----------|---------------|
+| 2026-10-25 | | mart | Lead-Engine-Mart in Schema `mart_lead_engine`: `dim_quelle`, `dim_firma`, `dim_stelle`, `fakt_stelle` (Lebenszyklus je Stelle, `ist_online`), `fakt_stelle_sichtung` (je Stelle und Lauf) plus `_v`-Views; Macro `lead_engine_quelle_name`; ER-Diagramm `design/mart/lead_engine/er-mart-lead-engine.mmd` | |
 | 2026-10-25 | | pipeline | Lead-Engine: dlt-Ladestrecke `scripts/lead_engine/load_landing.py` (Storage -> `landing.lead_engine_datei`/`_lauf`), erster Lauf geladen (94 Dateien, 1 Lauf), Staging und Raw Vault gebaut, 59 Tests grün | |
 | 2026-10-25 | | staging | Lead-Engine angebunden: Landing-Tabellen `landing.lead_engine_datei`/`_lauf` (dlt-Ladestrecke `scripts/lead_engine/load_landing.py`), Base-Views `base_lead_engine__{karriere,theirstack,website}_stelle` und `base_lead_engine__lauf_abfrage` (neuer Ordner `models/base/`), Staging `stg_lead_engine__*_stelle` samt FK-Staging `__firma` | |
 | 2026-10-25 | | raw-vault | Lead-Engine: `hub_stelle`, `hub_firma`, `link_stelle_firma`, `sat_stelle__{karriere,theirstack,website}`, `sat_firma__{karriere,theirstack}`, `sat_stelle_sichtung__{karriere,theirstack,website}` (Sichtungs-Satelliten je Quelle, da `automate_dv.sat()` nur ein `source_model` kennt) | |
