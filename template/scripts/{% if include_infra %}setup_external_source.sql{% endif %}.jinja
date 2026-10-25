@@ -1,0 +1,58 @@
+-- Sets up the external data source for Parquet-based staging (ADLS Gen2 via managed identity).
+-- Run once per database (dev/test/prod) after the infra Bicep deployment, before
+-- `dbt run-operation stage_external_sources`. Idempotent — safe to re-run.
+--
+-- Requires: the SQL Server's system-assigned managed identity already granted an
+-- appropriate storage role (Contributor/Reader) on the target storage account
+-- (done by infra/modules/rbac.bicep).
+--
+--   # SQL auth (matches the infra-deploy workflow; password via SQLCMDPASSWORD env var):
+--   sqlcmd -S <server>.database.windows.net -d <database> -U <sql-admin-login> -l 60 -b \
+--     -i scripts/setup_external_source.sql \
+--     -v StorageAccountName=<account> ContainerName={{ infra_storage_container_name }}
+--
+--   # Alternative for local use, AAD via Azure CLI login (az login first):
+--   sqlcmd -S <server>.database.windows.net -d <database> -G -l 60 -b \
+--     -i scripts/setup_external_source.sql \
+--     -v StorageAccountName=<account> ContainerName={{ infra_storage_container_name }}
+
+-- 1. Master key — prerequisite for CREATE DATABASE SCOPED CREDENTIAL in general.
+IF NOT EXISTS (SELECT 1 FROM sys.symmetric_keys WHERE name = '##MS_DatabaseMasterKey##')
+BEGIN
+    CREATE MASTER KEY;
+END
+GO
+
+-- 2. Database scoped credential using the server's system-assigned managed identity.
+--    No SECRET clause: managed identity auth fetches its token from Azure AD at query
+--    time, it doesn't need a stored secret (unlike SAS-token or storage-key credentials).
+IF NOT EXISTS (SELECT 1 FROM sys.database_scoped_credentials WHERE name = 'managed_identity')
+BEGIN
+    CREATE DATABASE SCOPED CREDENTIAL [managed_identity]
+    WITH IDENTITY = 'Managed Identity';
+END
+GO
+
+-- 3. External file format — name must match `file_format: ParquetFormat` in sources.yml.
+IF NOT EXISTS (SELECT 1 FROM sys.external_file_formats WHERE name = 'ParquetFormat')
+BEGIN
+    CREATE EXTERNAL FILE FORMAT [ParquetFormat]
+    WITH (FORMAT_TYPE = PARQUET);
+END
+GO
+
+-- 4. External data source — name must match `data_source: StageFileSystem` in sources.yml.
+--    Uses adls:// — this is the scheme Azure SQL DATABASE actually supports for external
+--    data sources against ADLS Gen2. abfss:// is a Synapse Analytics / Databricks / Fabric
+--    scheme; Azure SQL Database rejects it with "unsupported connector location prefix"
+--    (Msg 46548). Note the path order also differs from abfss: container comes after the
+--    host here, not before it with an @.
+IF NOT EXISTS (SELECT 1 FROM sys.external_data_sources WHERE name = 'StageFileSystem')
+BEGIN
+    CREATE EXTERNAL DATA SOURCE [StageFileSystem]
+    WITH (
+        LOCATION = 'adls://$(StorageAccountName).dfs.core.windows.net/$(ContainerName)',
+        CREDENTIAL = [managed_identity]
+    );
+END
+GO

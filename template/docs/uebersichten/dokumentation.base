@@ -1,0 +1,86 @@
+filters:
+  and:
+    - file.ext == "md"
+    - '!file.inFolder("vorlagen")'
+formulas:
+  verlinkt_von: file.backlinks.length
+  verweist_auf: file.links.length
+properties:
+  file.name:
+    displayName: Dokument
+  file.folder:
+    displayName: Ordner
+  note.tags:
+    displayName: Tags
+  file.mtime:
+    displayName: Geändert
+  formula.verlinkt_von:
+    displayName: Verlinkt von
+  formula.verweist_auf:
+    displayName: Verweist auf
+views:
+  - type: table
+    name: Nach Bereich
+    groupBy:
+      property: file.folder
+      direction: ASC
+    order:
+      - file.name
+      - tags
+      - formula.verlinkt_von
+      - file.mtime
+    sort:
+      - property: file.name
+        direction: ASC
+  - type: table
+    name: Zuletzt geändert
+    order:
+      - file.name
+      - file.folder
+      - file.mtime
+    sort:
+      - property: file.mtime
+        direction: DESC
+    limit: 25
+  - type: table
+    name: Nachschlagen
+    filters:
+      or:
+        - file.hasTag("typ/glossar")
+        - file.hasTag("typ/faq")
+        - file.hasTag("typ/troubleshooting")
+        - file.hasTag("typ/checkliste")
+        - file.hasTag("typ/changelog")
+    groupBy:
+      property: tags
+      direction: ASC
+    order:
+      - file.name
+      - file.folder
+      - file.mtime
+  - type: cards
+    name: Handbücher
+    filters:
+      and:
+        - file.hasTag("typ/inhaltsverzeichnis")
+    order:
+      - file.name
+      - file.folder
+      - formula.verweist_auf
+    sort:
+      - property: file.folder
+        direction: ASC
+  - type: table
+    name: Wenig verlinkt
+    filters:
+      and:
+        - formula.verlinkt_von < 2
+        - '!file.hasTag("typ/inhaltsverzeichnis")'
+    order:
+      - file.name
+      - file.folder
+      - formula.verlinkt_von
+      - formula.verweist_auf
+    sort:
+      - property: formula.verlinkt_von
+        direction: ASC

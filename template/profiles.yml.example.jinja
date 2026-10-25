@@ -1,0 +1,50 @@
+# Example profiles.yml. Copy it to the project root as `profiles.yml` (already
+# gitignored) — dbt finds a profiles.yml in the current working directory
+# automatically, no ~/.dbt/ or --profiles-dir needed. Never commit real
+# credentials; this .example file has none.
+#
+#   cp profiles.yml.example profiles.yml
+#   # then fill in <SQL_USER> / <SQL_PASSWORD> or switch to `authentication: cli`
+
+{{ profile_name }}:
+  target: dev
+  outputs:
+    dev:
+      type: sqlserver
+      driver: 'ODBC Driver 18 for SQL Server'
+      server: {{ warehouse_server_example }}
+      port: 1433
+      database: {{ database_name }}-dev
+      schema: {{ staging_schema }}
+      authentication: cli   # or 'sql' with user/password below
+      encrypt: true
+      trust_cert: false
+
+    test:
+      type: sqlserver
+      driver: 'ODBC Driver 18 for SQL Server'
+      server: {{ warehouse_server_example }}
+      port: 1433
+      database: {{ database_name }}-test
+      schema: {{ staging_schema }}
+      authentication: cli
+      encrypt: true
+      trust_cert: false
+
+    prod:
+      type: sqlserver
+      driver: 'ODBC Driver 18 for SQL Server'
+      server: {{ warehouse_server_example }}
+      port: 1433
+      database: {{ database_name }}
+      schema: {{ staging_schema }}
+      authentication: sql
+      user: <SQL_USER>
+      password: "<SQL_PASSWORD>"
+      encrypt: true
+      trust_cert: false
+
+# Alternative: Azure CLI authentication (recommended for local dev)
+#   az login
+# then use `authentication: cli` (already the default above for dev/test) instead
+# of `authentication: sql` with a hardcoded user/password.

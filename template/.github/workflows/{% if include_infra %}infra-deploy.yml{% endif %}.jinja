@@ -1,0 +1,197 @@
+name: Deploy Azure Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      resource_group:
+        description: 'Target Azure resource group (must already exist)'
+        required: true
+        type: string
+      location:
+        description: 'Azure region'
+        required: true
+        default: '{{ infra_location }}'
+        type: string
+      sql_server_name:
+        description: 'SQL logical server name'
+        required: true
+        default: '{{ infra_sql_server_name }}'
+        type: string
+      aad_admin_group_name:
+        description: 'AAD group display name for the SQL Server admin'
+        required: true
+        type: string
+      aad_admin_group_object_id:
+        description: 'AAD group object ID (SID) for the SQL Server admin'
+        required: true
+        type: string
+      sql_admin_login:
+        description: 'Secondary SQL admin login (password comes from the SQL_ADMIN_PASSWORD secret, not this input)'
+        required: true
+        default: 'sqladmin'
+        type: string
+      deploy_datavault:
+        description: 'Deploy prod database ({{ database_name }})'
+        required: true
+        default: true
+        type: boolean
+      deploy_datavault_dev:
+        description: 'Deploy dev database ({{ database_name }}-dev)'
+        required: true
+        default: true
+        type: boolean
+      deploy_datavault_test:
+        description: 'Deploy test database ({{ database_name }}-test)'
+        required: true
+        default: true
+        type: boolean
+      create_storage_account:
+        description: 'Create a new storage account (uncheck to use an existing one)'
+        required: true
+        default: true
+        type: boolean
+      storage_account_name:
+        description: 'Storage account name (created if new, referenced if existing)'
+        required: true
+        default: '{{ infra_storage_account_name }}'
+        type: string
+      storage_container_name:
+        description: 'ADLS Gen2 container name for staged source files'
+        required: true
+        default: '{{ infra_storage_container_name }}'
+        type: string
+      existing_storage_account_resource_group:
+        description: 'Resource group of an EXISTING storage account (ignored if creating new; blank = same as resource_group)'
+        required: false
+        type: string
+      allow_all_ips_firewall:
+        description: 'DANGER: also open the firewall to 0.0.0.0-255.255.255.255 (default off, opt-in only)'
+        required: true
+        default: false
+        type: boolean
+      what_if_only:
+        description: 'Preview only: run az deployment ... --what-if, make no actual changes'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  deploy-infra:
+    name: Deploy Azure Infrastructure
+    runs-on: ubuntu-latest
+
+    # Inputs are passed through env instead of being interpolated directly into `run:`
+    # scripts — this avoids shell injection via free-text inputs and keeps quoting sane.
+    env:
+      RESOURCE_GROUP: '{% raw %}${{ inputs.resource_group }}{% endraw %}'
+      LOCATION: '{% raw %}${{ inputs.location }}{% endraw %}'
+      SQL_SERVER_NAME: '{% raw %}${{ inputs.sql_server_name }}{% endraw %}'
+      AAD_ADMIN_GROUP_NAME: '{% raw %}${{ inputs.aad_admin_group_name }}{% endraw %}'
+      AAD_ADMIN_GROUP_OBJECT_ID: '{% raw %}${{ inputs.aad_admin_group_object_id }}{% endraw %}'
+      AAD_TENANT_ID: '{% raw %}${{ secrets.AZURE_TENANT_ID }}{% endraw %}'
+      SQL_ADMIN_LOGIN: '{% raw %}${{ inputs.sql_admin_login }}{% endraw %}'
+      STORAGE_ACCOUNT_NAME: '{% raw %}${{ inputs.storage_account_name }}{% endraw %}'
+      STORAGE_CONTAINER_NAME: '{% raw %}${{ inputs.storage_container_name }}{% endraw %}'
+      EXISTING_STORAGE_RG_INPUT: '{% raw %}${{ inputs.existing_storage_account_resource_group }}{% endraw %}'
+      DATABASE_BASE_NAME: '{{ database_name }}'
+      DEPLOY_PROD: '{% raw %}${{ inputs.deploy_datavault }}{% endraw %}'
+      DEPLOY_DEV: '{% raw %}${{ inputs.deploy_datavault_dev }}{% endraw %}'
+      DEPLOY_TEST: '{% raw %}${{ inputs.deploy_datavault_test }}{% endraw %}'
+      CREATE_STORAGE: '{% raw %}${{ inputs.create_storage_account }}{% endraw %}'
+      ALLOW_ALL_IPS: '{% raw %}${{ inputs.allow_all_ips_firewall }}{% endraw %}'
+      WHAT_IF_ONLY: '{% raw %}${{ inputs.what_if_only }}{% endraw %}'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientId": "{% raw %}${{ secrets.AZURE_CLIENT_ID }}{% endraw %}",
+              "clientSecret": "{% raw %}${{ secrets.AZURE_CLIENT_SECRET }}{% endraw %}",
+              "tenantId": "{% raw %}${{ secrets.AZURE_TENANT_ID }}{% endraw %}",
+              "subscriptionId": "{% raw %}${{ secrets.AZURE_SUBSCRIPTION_ID }}{% endraw %}"
+            }
+
+      - name: Deploy Bicep (what-if or create)
+        id: deploy
+        env:
+          SQL_ADMIN_PASSWORD: '{% raw %}${{ secrets.SQL_ADMIN_PASSWORD }}{% endraw %}'
+        run: |
+          EXISTING_STORAGE_RG="${EXISTING_STORAGE_RG_INPUT:-$RESOURCE_GROUP}"
+
+          ARGS=(
+            --resource-group "$RESOURCE_GROUP"
+            --template-file infra/main.bicep
+            --parameters
+              location="$LOCATION"
+              sqlServerName="$SQL_SERVER_NAME"
+              aadAdminGroupName="$AAD_ADMIN_GROUP_NAME"
+              aadAdminGroupObjectId="$AAD_ADMIN_GROUP_OBJECT_ID"
+              aadTenantId="$AAD_TENANT_ID"
+              sqlAdminLogin="$SQL_ADMIN_LOGIN"
+              sqlAdminPassword="$SQL_ADMIN_PASSWORD"
+              allowAllIps="$ALLOW_ALL_IPS"
+              deploySqlDatavault="$DEPLOY_PROD"
+              deploySqlDatavaultDev="$DEPLOY_DEV"
+              deploySqlDatavaultTest="$DEPLOY_TEST"
+              databaseBaseName="$DATABASE_BASE_NAME"
+              createStorageAccount="$CREATE_STORAGE"
+              storageAccountName="$STORAGE_ACCOUNT_NAME"
+              storageContainerName="$STORAGE_CONTAINER_NAME"
+              existingStorageAccountResourceGroup="$EXISTING_STORAGE_RG"
+          )
+
+          if [ "$WHAT_IF_ONLY" = "true" ]; then
+            az deployment group what-if "${ARGS[@]}"
+          else
+            az deployment group create "${ARGS[@]}" \
+              --query "properties.outputs" -o json > deploy_outputs.json
+            echo "sql_server_fqdn=$(jq -r '.sqlServerFqdn.value' deploy_outputs.json)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install sqlcmd (mssql-tools18)
+        if: '{% raw %}${{ inputs.what_if_only == false }}{% endraw %}'
+        run: |
+          curl -sSL -O https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb
+          sudo dpkg -i packages-microsoft-prod.deb
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+          echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
+
+      # Runs as the SQL admin login created by the Bicep deployment — the deploying
+      # service principal does NOT need to be a member of the AAD admin group for this.
+      # Requires the "Allow Azure Services" firewall rule (default on) so the GitHub-hosted
+      # runner can reach the server. -b makes sqlcmd fail the step on SQL errors; -l 60
+      # allows a serverless database time to resume from auto-pause.
+      #
+      # Runs setup_schemas.sql before setup_external_source.sql so a fresh database is
+      # fully ready for `dbt run` right after this workflow finishes — no manual SQL step
+      # should be needed afterwards.
+      - name: Configure schemas and external data source (per deployed database)
+        if: '{% raw %}${{ inputs.what_if_only == false }}{% endraw %}'
+        env:
+          SQLCMDPASSWORD: '{% raw %}${{ secrets.SQL_ADMIN_PASSWORD }}{% endraw %}'
+        run: |
+          DBS=()
+          [ "$DEPLOY_PROD" = "true" ] && DBS+=("$DATABASE_BASE_NAME")
+          [ "$DEPLOY_DEV" = "true" ] && DBS+=("$DATABASE_BASE_NAME-dev")
+          [ "$DEPLOY_TEST" = "true" ] && DBS+=("$DATABASE_BASE_NAME-test")
+
+          for DB in "${DBS[@]}"; do
+            echo "Creating schemas on $DB"
+            sqlcmd -S "{% raw %}${{ steps.deploy.outputs.sql_server_fqdn }}{% endraw %}" -d "$DB" \
+              -U "$SQL_ADMIN_LOGIN" \
+              -l 60 -b \
+              -i scripts/setup_schemas.sql
+
+            echo "Configuring external data source on $DB"
+            sqlcmd -S "{% raw %}${{ steps.deploy.outputs.sql_server_fqdn }}{% endraw %}" -d "$DB" \
+              -U "$SQL_ADMIN_LOGIN" \
+              -l 60 -b \
+              -i scripts/setup_external_source.sql \
+              -v StorageAccountName="$STORAGE_ACCOUNT_NAME" ContainerName="$STORAGE_CONTAINER_NAME"
+          done

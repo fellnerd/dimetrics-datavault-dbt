@@ -1,0 +1,154 @@
+filters:
+  and:
+    - "file.inFolder(\"02-entwickler\")"
+    - "file.ext == \"md\""
+formulas:
+  verlinkt_von: "file.backlinks.length"
+  verweist_auf: "file.links.length"
+properties:
+  file.name:
+    displayName: "Datei"
+  note.title:
+    displayName: "Titel"
+  note.tags:
+    displayName: "Tags"
+  file.folder:
+    displayName: "Ordner"
+  file.mtime:
+    displayName: "Geändert"
+  formula.verlinkt_von:
+    displayName: "Verlinkt von"
+  formula.verweist_auf:
+    displayName: "Verweist auf"
+views:
+  - type: "table"
+    name: "Kapitel"
+    order:
+      - "file.name"
+      - "note.title"
+      - "note.tags"
+      - "file.mtime"
+    sort:
+      - property: "file.path"
+        direction: "ASC"
+  - type: "table"
+    name: "Nach Ordner"
+    groupBy:
+      property: "file.folder"
+      direction: "ASC"
+    order:
+      - "file.name"
+      - "note.title"
+      - "note.tags"
+      - "file.mtime"
+    sort:
+      - property: "file.name"
+        direction: "ASC"
+  - type: "table"
+    name: "Nach Tag"
+    groupBy:
+      property: "note.tags"
+      direction: "ASC"
+    order:
+      - "file.name"
+      - "note.title"
+      - "note.tags"
+      - "file.mtime"
+    sort:
+      - property: "file.name"
+        direction: "ASC"
+  - type: "table"
+    name: "Staging"
+    filters:
+      and:
+        - "file.inFolder(\"02-entwickler/04-objekte-anlegen/staging\")"
+    order:
+      - "file.name"
+      - "note.title"
+      - "note.tags"
+      - "file.mtime"
+    sort:
+      - property: "file.path"
+        direction: "ASC"
+  - type: "table"
+    name: "Raw Vault"
+    filters:
+      and:
+        - "file.inFolder(\"02-entwickler/04-objekte-anlegen/raw-vault\")"
+    order:
+      - "file.name"
+      - "note.title"
+      - "note.tags"
+      - "file.mtime"
+    sort:
+      - property: "file.path"
+        direction: "ASC"
+  - type: "table"
+    name: "Business Vault"
+    filters:
+      and:
+        - "file.inFolder(\"02-entwickler/04-objekte-anlegen/business-vault\")"
+    order:
+      - "file.name"
+      - "note.title"
+      - "note.tags"
+      - "file.mtime"
+    sort:
+      - property: "file.path"
+        direction: "ASC"
+  - type: "table"
+    name: "Mart"
+    filters:
+      and:
+        - "file.inFolder(\"02-entwickler/04-objekte-anlegen/mart\")"
+    order:
+      - "file.name"
+      - "note.title"
+      - "note.tags"
+      - "file.mtime"
+    sort:
+      - property: "file.path"
+        direction: "ASC"
+  - type: "table"
+    name: "Nachschlagen"
+    order:
+      - "file.name"
+      - "note.title"
+      - "note.tags"
+      - "file.mtime"
+    sort:
+      - property: "file.name"
+        direction: "ASC"
+    filters:
+      or:
+        - "file.hasTag(\"typ/glossar\")"
+        - "file.hasTag(\"typ/faq\")"
+        - "file.hasTag(\"typ/troubleshooting\")"
+        - "file.hasTag(\"typ/checkliste\")"
+        - "file.hasTag(\"typ/nachschlagen\")"
+        - "file.hasTag(\"typ/changelog\")"
+  - type: "table"
+    name: "Zuletzt geändert"
+    order:
+      - "file.name"
+      - "note.title"
+      - "file.folder"
+      - "file.mtime"
+    sort:
+      - property: "file.mtime"
+        direction: "DESC"
+    limit: 25
+  - type: "table"
+    name: "Wenig verlinkt"
+    filters:
+      and:
+        - "formula.verlinkt_von < 2"
+        - "!file.hasTag(\"typ/inhaltsverzeichnis\")"
+    order:
+      - "file.name"
+      - "note.title"
+      - "formula.verlinkt_von"
+      - "formula.verweist_auf"
+    sort:
+      - property: "formula.verlinkt_von"
+        direction: "ASC"

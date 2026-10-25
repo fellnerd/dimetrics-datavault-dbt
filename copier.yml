@@ -1,0 +1,147 @@
+# copier.yml — Copier template configuration for datavault-dbt-boilerplate
+# Docs: https://copier.readthedocs.io/en/stable/configuring/
+
+_min_copier_version: "9.0.0"
+_subdirectory: "template"
+_envops:
+  trim_blocks: true
+  lstrip_blocks: true
+  keep_trailing_newline: true
+_answers_file: .copier-answers.yml
+
+# ------------------------------------------------------------------
+# Project identity
+# ------------------------------------------------------------------
+project_name:
+  type: str
+  help: "Name of the dbt project (used as dbt_project.yml `name:`, lowercase, no spaces)"
+  default: "datavault"
+  validator: >-
+    {% if not (project_name | regex_search('^[a-z][a-z0-9_]*$')) %}
+    project_name must be lowercase snake_case (letters, digits, underscore, starting with a letter)
+    {% endif %}
+
+profile_name:
+  type: str
+  help: "dbt profile name (matches an entry in ~/.dbt/profiles.yml)"
+  default: "{{ project_name }}"
+
+company_name:
+  type: str
+  help: "Company / customer name (used in doc headers, e.g. README, CLAUDE.md)"
+  default: "Your Company"
+
+author_name:
+  type: str
+  help: "Primary maintainer name (used in doc headers / CLAUDE.md 'Me' section)"
+  default: "Your Name"
+
+github_org:
+  type: str
+  help: "GitHub org or user the generated project will live under (used in README links)"
+  default: "your-org"
+
+# ------------------------------------------------------------------
+# Warehouse / connection (SQL Server / Azure SQL only in v1)
+# ------------------------------------------------------------------
+warehouse_server_example:
+  type: str
+  help: "Example server hostname for profiles.yml.example / docs (not a real credential, purely illustrative)"
+  default: "your-sql-server.database.windows.net"
+
+database_name:
+  type: str
+  help: >-
+    Base database name. Generates three example targets in profiles.yml.example:
+    prod -> {{ database_name }}, dev -> {{ database_name }}-dev, test -> {{ database_name }}-test
+  default: "{{ project_name }}"
+
+# ------------------------------------------------------------------
+# Data Vault conventions
+# ------------------------------------------------------------------
+hash_algorithm:
+  type: str
+  help: "Hash algorithm for hub/sat/link hash keys"
+  choices:
+    SHA-256 (32 byte, recommended): SHA
+    MD5 (16 byte, legacy compatibility): MD5
+  default: SHA
+
+schema_prefix:
+  type: str
+  help: "Prefix for Data Vault schemas (raw_vault -> {{ schema_prefix }}, {{ schema_prefix }}_<source>)"
+  default: "vault"
+
+staging_schema:
+  type: str
+  help: "Schema name for staging views"
+  default: "stg"
+
+mart_schema:
+  type: str
+  help: "Schema name for common mart objects"
+  default: "mart"
+
+# ------------------------------------------------------------------
+# Example / demo content
+# ------------------------------------------------------------------
+include_example:
+  type: bool
+  help: "Include the AdventureWorks demo (staging -> hub/sat/link reference implementation)?"
+  default: true
+
+# ------------------------------------------------------------------
+# Azure infrastructure automation
+# ------------------------------------------------------------------
+include_infra:
+  type: bool
+  help: "Include Azure infrastructure-as-code (Bicep + GitHub Actions deploy workflow)?"
+  default: true
+
+infra_location:
+  type: str
+  help: "Default Azure region for infra deployment (used as a workflow input default, overridable per-run)"
+  default: "westeurope"
+  when: "{{ include_infra }}"
+
+infra_sql_server_name:
+  type: str
+  help: >-
+    Default SQL Server name baked into the deploy workflow's input default
+    (still overridable per-run). SQL Server names are globally unique across
+    ALL of Azure (the FQDN is <name>.database.windows.net) — a generic name
+    like "sql-datavault-001" is very likely already taken by someone else.
+    Include something distinctive (your org/company name) to reduce collision risk.
+  default: "sql-{{ github_org }}-{{ project_name }}-001"
+  when: "{{ include_infra }}"
+
+infra_storage_account_name:
+  type: str
+  help: >-
+    Default storage account name baked into the deploy workflow's input default.
+    Must be globally unique across ALL of Azure (not just your subscription),
+    lowercase letters/digits only, no hyphens, 3-24 chars. A generic name like
+    "stdatavault001" is very likely already taken — include something
+    distinctive (your org/company name). Check availability before deploying:
+    az storage account check-name --name <name>
+  default: "st{{ github_org | replace('-', '') }}{{ project_name }}001"
+  when: "{{ include_infra }}"
+  validator: >-
+    {% if include_infra and not (infra_storage_account_name | regex_search('^[a-z0-9]{3,24}$')) %}
+    Storage account name must be 3-24 lowercase letters/digits only (Azure naming rule)
+    {% endif %}
+
+infra_storage_container_name:
+  type: str
+  help: "ADLS Gen2 container name for staged source files (matches sources.yml `data_source` location path)"
+  default: "stage-fs"
+  when: "{{ include_infra }}"
+
+# ------------------------------------------------------------------
+# Housekeeping
+# ------------------------------------------------------------------
+_exclude:
+  - "*.pyc"
+  - "__pycache__"
+  - ".DS_Store"
+  - "copier.yml"

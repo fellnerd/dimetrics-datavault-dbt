@@ -1,0 +1,34 @@
+{
+  "vault": "docs",
+  "breadcrumb": [
+    [
+      "Dokumentation",
+      "README.md"
+    ],
+    [
+      "Mandanten-Architektur & Projekt",
+      "04-mandant-architektur/00-mandant-architektur.md"
+    ]
+  ],
+  "tags": [
+    "typ/er-diagramm"
+  ],
+  "groups": {
+    "04-mandant-architektur/raw-vault": {
+      "title": "Raw Vault",
+      "tag": "architektur/raw-vault",
+      "index": "00-raw-vault.md"
+    },
+    "04-mandant-architektur/business-vault": {
+      "title": "Business Vault",
+      "tag": "architektur/business-vault",
+      "index": "00-business-vault.md"
+    },
+    "04-mandant-architektur/information-mart": {
+      "title": "Information Mart",
+      "tag": "architektur/information-mart",
+      "index": "00-information-mart.md"
+    }
+  },
+  "diagrams": []
+}

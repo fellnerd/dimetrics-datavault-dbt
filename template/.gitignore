@@ -1,0 +1,24 @@
+# dbt
+target/
+dbt_packages/
+logs/
+.venv/
+.user.yml
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# Credentials
+profiles.yml
+
+# Obsidian: persönlicher Arbeitsbereich (Vault-Konfiguration docs/.obsidian selbst ist versioniert)
+**/.obsidian/workspace*.json
+**/.obsidian/cache

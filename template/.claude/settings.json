@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dbt parse:*)",
+      "Bash(dbt compile:*)",
+      "Bash(dbt ls:*)",
+      "Bash(dbt list:*)",
+      "Bash(dbt debug:*)",
+      "Bash(dbt deps:*)",
+      "Bash(dbt test:*)",
+      "Bash(dbt show:*)",
+      "Bash(dbt docs generate:*)",
+      "Bash(.venv/bin/dbt parse:*)",
+      "Bash(.venv/bin/dbt compile:*)",
+      "Bash(.venv/bin/dbt ls:*)",
+      "Bash(.venv/bin/dbt debug:*)",
+      "Bash(.venv/bin/dbt deps:*)",
+      "Bash(.venv/bin/dbt test:*)"
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "datavault-dbt": {
+      "source": {
+        "source": "github",
+        "repo": "fellnerd/datavault-dbt-boilerplate"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "dv-toolkit@datavault-dbt": true
+  }
+}

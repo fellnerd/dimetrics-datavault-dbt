@@ -1,0 +1,216 @@
+# Azure infrastructure for {{ project_name }}
+
+Bicep templates + a GitHub Actions workflow to provision the Azure SQL Server,
+up to three databases (prod/dev/test), and the storage account + RBAC needed
+for managed-identity-based external data sources.
+
+## What gets created
+
+- **SQL Server** (`sqlServerName`) with one system-assigned managed identity,
+  an AAD admin group, and a secondary SQL auth login (both work side by side).
+- **Databases** — `{{ database_name }}`, `{{ database_name }}-dev`,
+  `{{ database_name }}-test` — each individually toggleable, all serverless
+  General Purpose with auto-pause.
+- **Firewall** — only the "Allow Azure Services" rule (0.0.0.0/0.0.0.0) by
+  default. A fully-open rule (0.0.0.0-255.255.255.255) is available but
+  opt-in only (`allow_all_ips_firewall`) — **not recommended**.
+- **Storage account** — either a new one (ADLS Gen2 + a `{{ infra_storage_container_name }}`
+  container) or a reference to an existing one, your choice per deployment.
+- **RBAC** — grants the SQL Server's managed identity `Storage Blob Data
+  Contributor` (or Reader) on the storage account, so `CREATE EXTERNAL DATA
+  SOURCE ... CREDENTIAL = [managed_identity]` actually works.
+
+After the Bicep deployment, the workflow also runs, against each deployed
+database:
+
+1. [`../scripts/setup_schemas.sql`](../scripts/setup_schemas.sql) — creates
+   the `{{ staging_schema }}`/`{{ schema_prefix }}`/`{{ mart_schema }}` schemas.
+2. [`../scripts/setup_external_source.sql`](../scripts/setup_external_source.sql)
+   — creates the master key, the `managed_identity` database-scoped
+   credential, the `ParquetFormat` external file format, and the
+   `StageFileSystem` external data source (matching the names expected by
+   `models/staging/sources.yml`).
+
+A freshly deployed database is ready for `dbt debug` and `dbt run` right
+after the workflow finishes — no manual SQL step should be needed. If you
+still had to run either script by hand, that's a gap worth reporting/fixing
+in the boilerplate.
+
+These post-deploy steps authenticate with the **SQL admin login** created by
+the Bicep deployment (`sql_admin_login` + the `SQL_ADMIN_PASSWORD` secret) —
+the deploying service principal does **not** need to be a member of the AAD
+admin group. They reach the server through the "Allow Azure Services"
+firewall rule, which GitHub-hosted runners (running in Azure) pass through.
+
+**Local `dbt run` also needs firewall access.** The server only allows Azure
+services by default — your workstation's IP is not automatically allowed.
+Add it once:
+
+```bash
+az sql server firewall-rule create \
+  --resource-group <resource-group-name> \
+  --server <sql-server-name> \
+  --name "local-dev-$(whoami)" \
+  --start-ip-address "$(curl -s https://api.ipify.org)" \
+  --end-ip-address "$(curl -s https://api.ipify.org)"
+```
+
+---
+
+## One-time setup checklist (do this before the first run)
+
+Everything below is a **one-time setup per environment/subscription**, not
+per deployment run. Skip a step if it's already done (e.g. the resource
+group or AAD group already exists from a previous project).
+
+Fill in your own values for anything in `<angle brackets>`. Run these with
+an account that has enough rights in the subscription (Owner or
+User Access Administrator + Contributor) — creating service principals and
+role assignments needs more than plain Contributor.
+
+### 1. Register the Azure resource providers (once per subscription)
+
+A fresh subscription has not "activated" every resource type yet — deploying
+without this fails with `MissingSubscriptionRegistration`, and the
+deployment's own service principal can't fix this itself (it's scoped to a
+resource group, not the whole subscription).
+
+```bash
+az provider register --namespace Microsoft.Sql
+az provider register --namespace Microsoft.Storage
+# wait until both report "Registered" (can take a minute):
+az provider show --namespace Microsoft.Sql --query registrationState -o tsv
+az provider show --namespace Microsoft.Storage --query registrationState -o tsv
+```
+
+### 2. Create (or identify) the AAD admin group
+
+This group becomes the SQL Server's Azure AD admin. If you already have a
+suitable group, just note its name and object ID and skip creating a new one.
+
+```bash
+az ad group create \
+  --display-name "<sql-admin-group-name>" \
+  --mail-nickname "<sql-admin-group-name>"
+
+# add yourself (or whoever should administer the databases):
+az ad group member add \
+  --group "<sql-admin-group-name>" \
+  --member-id "$(az ad signed-in-user show --query id -o tsv)"
+
+# note the object ID for later:
+az ad group show --group "<sql-admin-group-name>" --query id -o tsv
+```
+
+### 3. Create the resource group
+
+```bash
+az group create --name "<resource-group-name>" --location "{{ infra_location }}"
+```
+
+### 4. Create a service principal for GitHub Actions, scoped to that resource group
+
+```bash
+az ad sp create-for-rbac \
+  --name "<sp-name, e.g. sp-github-{{ project_name }}>" \
+  --role Contributor \
+  --scopes "/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>"
+```
+
+This prints `appId`, `password`, and `tenant` — save them, `password` is
+shown only once. Then add the second role (needed for the RBAC step in the
+Bicep deployment — plain Contributor is **not** enough for this):
+
+```bash
+az role assignment create \
+  --assignee "<appId from above>" \
+  --role "User Access Administrator" \
+  --scope "/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>"
+```
+
+Both roles are scoped to this one resource group only, not the subscription.
+
+### 5. Pick globally unique names, and check them before deploying
+
+SQL Server names and storage account names are unique across **all of
+Azure**, not just your subscription — a generic name is very likely already
+taken by someone else. The Copier-generated defaults
+(`{{ infra_sql_server_name }}`, `{{ infra_storage_account_name }}`) are a
+starting point, not a guarantee. Check before you deploy:
+
+```bash
+az storage account check-name --name "<storage-account-name>"
+# SQL server name uniqueness surfaces as a deployment error if taken; there's
+# no equivalent standalone check-name command, so pick something distinctive
+# (e.g. include your org name) rather than verifying in advance.
+```
+
+### 6. Set the 5 required GitHub secrets
+
+```bash
+gh secret set AZURE_CLIENT_ID -R <org>/<repo> --body "<appId>"
+gh secret set AZURE_CLIENT_SECRET -R <org>/<repo> --body "<password>"
+gh secret set AZURE_TENANT_ID -R <org>/<repo> --body "<tenant>"
+gh secret set AZURE_SUBSCRIPTION_ID -R <org>/<repo> --body "<subscription-id>"
+gh secret set SQL_ADMIN_PASSWORD -R <org>/<repo> --body "<a-strong-generated-password>"
+```
+
+| Secret | Where it comes from |
+|---|---|
+| `AZURE_CLIENT_ID` | `appId` from step 4 |
+| `AZURE_CLIENT_SECRET` | `password` from step 4 (shown once — regenerate with `az ad sp credential reset --id <appId>` if lost) |
+| `AZURE_TENANT_ID` | `tenant` from step 4, or `az account show --query tenantId -o tsv` |
+| `AZURE_SUBSCRIPTION_ID` | `az account show --query id -o tsv` |
+| `SQL_ADMIN_PASSWORD` | You choose this — it becomes the secondary SQL admin login's password. Not recoverable once set (GitHub secrets can't be read back); store it in your password manager too. |
+
+Verify: `gh secret list -R <org>/<repo>` should show all 5.
+
+---
+
+## How to trigger a deployment
+
+GitHub -> Actions -> **Deploy Azure Infrastructure** -> "Run workflow", then
+fill in: resource group, AAD admin group name/object ID (from step 2 above),
+which of the three databases to deploy (three separate checkboxes — GitHub
+Actions has no true multi-select, so each database is its own toggle), and
+whether to create a new storage account or use an existing one.
+
+**Recommended first run:** tick `what_if_only` to preview the changes
+(`az deployment group what-if`) before actually applying them.
+
+## After deployment
+
+Run `dbt run-operation stage_external_sources` (from CI or locally) to
+actually create the external tables declared in `models/staging/sources.yml`
+— the infra workflow only sets up the data source/credential/file format,
+not the tables themselves.
+
+## Known rough edges
+
+- **RBAC propagation delay:** Azure role assignments can take a short time
+  (usually seconds) to actually take effect. If the external-data-source
+  setup step fails immediately after a fresh deployment with a permissions
+  error, wait a bit and re-run the workflow — the script is idempotent.
+- **Don't disable the "Allow Azure Services" firewall rule** if you use
+  GitHub-hosted runners — the post-deploy SQL step (and dbt CI runs) reach
+  the server through it. With a self-hosted runner you can replace it with
+  a firewall rule for that runner's IP instead.
+- **Don't enable Azure-AD-only authentication** on the server
+  (`azureADOnlyAuthentication`) unless you also rework the post-deploy SQL
+  step — it authenticates with the SQL admin login, which AAD-only mode
+  disables.
+- **Serverless auto-pause:** a paused database takes a moment to resume on
+  first connection. The workflow uses a 60s login timeout to absorb this;
+  ad-hoc local connections right after a long idle period may still need a
+  retry.
+- **Local validation:** `az bicep build --file main.bicep` for a syntax
+  check, `az deployment group validate` / `az deployment group what-if`
+  against a real (test) resource group before a real deploy.
+- **MFA policy vs. local CLI:** Azure now enforces MFA for *user accounts*
+  on resource writes — a plain `az login` session may get
+  `RequestDisallowedByAzure ... MFA` errors when creating resource groups
+  or deploying locally. Re-login interactively with MFA if that happens
+  (`az login` without `--use-device-code` if device code flow is blocked by
+  a Conditional Access policy — error 53003). The GitHub Actions workflow is
+  unaffected: it authenticates as a service principal, and neither MFA nor
+  Conditional Access device-registration checks apply to workload identities.

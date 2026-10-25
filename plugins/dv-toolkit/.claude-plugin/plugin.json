@@ -1,0 +1,21 @@
+{
+  "name": "dv-toolkit",
+  "version": "1.10.0",
+  "description": "Generische dbt/Data-Vault-2.1-Entwicklung: DV-Pattern-Bibliothek (Hub/Sat/Link/TL/MA/DC/Ref), automate_dv-Staging, Star-Schema-Marts, Design-Doku-Sync, Doku-Pflege im Obsidian-Vault mit Changelog, Konzeptdokumentation je Information Mart und Raw Vault (feste Kapitel, Objektseiten, Prüfskript), standardisierte ER-Diagramme, Berechtigungsvergabe (OLS/RLS/CLS), spezialisierte Agents, Pflichtkonventionen + Konventions-Audit beim Sitzungsstart und deterministischer Lint-Hook (Staging, Raw Vault, Mart) für SQL Server/Azure SQL.",
+  "author": {
+    "name": "Daniel Fellner",
+    "email": "daniel.fellner@ppmcag.com",
+    "url": "https://github.com/fellnerd"
+  },
+  "repository": "https://github.com/fellnerd/datavault-dbt-boilerplate",
+  "license": "MIT",
+  "keywords": [
+    "dbt",
+    "data-vault",
+    "datavault2.1",
+    "automate_dv",
+    "sql-server",
+    "azure-sql",
+    "row-level-security"
+  ]
+}

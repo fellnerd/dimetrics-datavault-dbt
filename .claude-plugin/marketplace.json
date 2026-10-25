@@ -1,0 +1,22 @@
+{
+  "name": "datavault-dbt",
+  "owner": {
+    "name": "Daniel Fellner",
+    "email": "daniel.fellner@ppmcag.com"
+  },
+  "plugins": [
+    {
+      "name": "dv-toolkit",
+      "source": "./plugins/dv-toolkit",
+      "description": "dbt + Data Vault 2.1 Entwicklung: Pattern-Bibliothek, Staging- und Mart-Skills, Architektur-Agents, Doku-Pflege im Obsidian-Vault inkl. Konzeptdokumentation (Skill dv-docs, Changelog), Pflichtkonventionen + Audit beim Sitzungsstart, deterministischer Lint-Hook für Staging, Raw Vault und Mart (automate_dv auf SQL Server/Azure SQL)"
+    },
+    {
+      "name": "masterdata-api",
+      "source": "./plugins/masterdata-api",
+      "description": "Token-authenticated REST-API-Skill für jede laufende Master Data Services (MDS) Instanz - Models/Entities/Attributes verwalten, Staging-Records mit Attribut-Filtern, Feldauswahl und Unique-Value-Lookups (Cascading-Dropdown-Filter) auf deployte Master-Daten/Views"
+    }
+  ],
+  "metadata": {
+    "description": "Claude-Code-Plugins für dbt/Data-Vault-2.1-Projekte aus dem datavault-dbt-boilerplate-Ökosystem"
+  }
+}

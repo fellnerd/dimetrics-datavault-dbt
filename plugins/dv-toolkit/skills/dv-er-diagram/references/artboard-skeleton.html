@@ -1,0 +1,188 @@
+<!--
+  Standard-Gerüst für Raw-Vault-ER-Diagramme (dv-er-diagram).
+  Platzhalter in <…>. CSS nicht verändern. Koordinaten sind Beispielwerte.
+  Design-Canvas: Inhalt von <helmet> und dem Artboard-<div> in das .dc.html-Format einbetten.
+  Standalone-HTML: <style> in den <head>, Artboard-<div> in den <body>.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap">
+<style>
+  body{margin:0;background:#F4F1EA;font-family:'IBM Plex Sans',system-ui,sans-serif;}
+  .box{position:absolute;background:#FFFFFF;border-radius:10px;border:1px solid #E4E0D4;box-shadow:0 1px 3px rgba(27,27,24,.09);overflow:hidden;}
+  .bar{height:7px;width:100%;}
+  .body{padding:9px 11px 10px;}
+  .box h3{margin:0 0 3px;font:700 12.5px/1.3 'IBM Plex Sans',sans-serif;color:#1B1B18;overflow-wrap:anywhere;}
+  .src{font:10.5px/1.5 'IBM Plex Mono',monospace;color:#6B6A63;margin-bottom:5px;overflow-wrap:anywhere;}
+  .srcl{font:600 9px/1 'IBM Plex Sans',sans-serif;text-transform:uppercase;letter-spacing:.5px;color:#9C998E;margin-right:3px;}
+  .field{font:11px/1.6 'IBM Plex Mono',monospace;color:#1B1B18;overflow-wrap:anywhere;}
+  .k{display:inline-block;min-width:26px;font:600 9.5px/1.4 'IBM Plex Sans',sans-serif;color:#FFFFFF;background:#1B1B18;border-radius:3px;padding:0 4px;margin-right:4px;text-align:center;vertical-align:1px;}
+  .k.fk{background:#6B6A63;}
+  .k.hd{background:#5B6472;}
+  .k.dt{background:#0F766E;}
+  .ar{color:#B45309;font-weight:600;}
+  .muted{color:#9C998E;}
+  .hint{font:11px/1.5 'IBM Plex Sans',sans-serif;color:#991B1B;margin-top:4px;}
+  .hub .bar{background:#3653C4;}
+  .hub{border-color:#C7D0F0;}
+  .sat .bar{background:#5B6472;}
+  .effsat .bar{background:#0F766E;}
+  .masat .bar{background:#4D7C0F;}
+  .link .bar{background:#B45309;}
+  .tlink .bar{background:#9A3412;}
+  .tlink{border-style:dashed;}
+  .ref .bar{background:#6B7280;}
+  .ref{border-style:dashed;}
+  .badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
+  .badge{display:inline-block;padding:2px 7px;border-radius:999px;font:600 9.5px/1.5 'IBM Plex Sans',sans-serif;}
+  .badge.open{background:#FEE2E2;color:#991B1B;}
+  .badge.ok{background:#DCFCE7;color:#166534;}
+  .badge.info{background:#E8EBF7;color:#2A3F8F;}
+  .kicker{font:600 11px/1.4 'IBM Plex Sans',sans-serif;text-transform:uppercase;letter-spacing:.6px;color:#8A887F;}
+  .legend-item{display:flex;align-items:center;gap:8px;font:12.5px/1.4 'IBM Plex Sans',sans-serif;color:#1B1B18;}
+  .legend-swatch{width:14px;height:14px;border-radius:4px;}
+  .note-box{position:absolute;background:#FFF9EC;border:1px solid #F0DDA8;border-radius:12px;padding:14px 18px;box-sizing:border-box;}
+  .note-box p{margin:0 0 6px;font:12px/1.55 'IBM Plex Sans',sans-serif;color:#4B4A45;}
+  .note-box p:last-child{margin-bottom:0;}
+  .note-box code{font-family:'IBM Plex Mono',monospace;background:#F4E9C9;padding:0 4px;border-radius:4px;font-size:11px;}
+  .side-note{position:absolute;font:12px/1.5 'IBM Plex Sans',sans-serif;color:#8A887F;font-style:italic;}
+</style>
+
+<div style="position:relative;width:2560px;height:1600px;box-sizing:border-box;background:#F4F1EA;">
+
+  <!-- HEADER -->
+  <div style="position:absolute;left:40px;top:32px;width:1200px;">
+    <div class="kicker">Data Vault 2.1 · Raw Vault · Business Concept „<concept>" · Schema <schema></div>
+    <h1 style="margin:6px 0 6px;font:700 30px/1.2 'IBM Plex Sans',sans-serif;color:#1B1B18;"><Concept> — Gesamtmodell</h1>
+    <div style="font:13.5px/1.6 'IBM Plex Sans',sans-serif;color:#5B6472;">
+      Quellsystem <QUELLE> · Branch <b><branch></b> · Staging-View je Quelle: <span style="font-family:'IBM Plex Mono',monospace;">ext_&lt;quelle&gt;_&lt;tabelle&gt;_main → &lt;quelle&gt;_&lt;tabelle&gt;_main</span> · Stand <YYYY-MM-DD>
+    </div>
+  </div>
+
+  <!-- LEGENDE: Zeile 1 Typen (nur verwendete Typen aufführen) -->
+  <div style="position:absolute;left:40px;top:150px;display:flex;gap:26px;align-items:center;flex-wrap:wrap;width:1220px;">
+    <div class="legend-item"><span class="legend-swatch" style="background:#3653C4;"></span>Hub</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#5B6472;"></span>Satellite</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#0F766E;"></span>Effectivity-Satellite</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#4D7C0F;"></span>Multi-Active-Satellite</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#B45309;"></span>Link</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#9A3412;"></span>Transaction Link</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#6B7280;"></span>Reference Table</div>
+    <div class="legend-item"><span class="field"><span class="ar">←</span></span>gehashte Quellspalten</div>
+    <div class="legend-item"><span class="badge ok">im Branch</span>Modell existiert bereits</div>
+  </div>
+  <!-- LEGENDE: Zeile 2 Kürzel (nur verwendete Kürzel aufführen) -->
+  <div style="position:absolute;left:40px;top:188px;display:flex;gap:18px;font:12px/1.5 'IBM Plex Sans',sans-serif;color:#4B4A45;">
+    <span><span class="k">PK</span>Primary / Hash Key</span>
+    <span><span class="k fk">FK</span>Foreign Key</span>
+    <span><span class="k hd">HD</span>Hashdiff (im Satellite physisch HASHDIFF)</span>
+    <span><span class="k dt">DT</span>Gültigkeit Effectivity-Satellite</span>
+    <span><span class="k fk">CDK</span>Dependent Key</span>
+    <span><span class="k fk">ATT</span>Attribut mit Funktion</span>
+  </div>
+
+  <!-- NOTIZBOX -->
+  <div class="note-box" style="left:1300px;top:20px;width:1200px;height:215px;">
+    <p><b>Konvention:</b> <code>dss_*</code>-Spalten werden in jeder Staging-View standardmässig abgeleitet und sind nicht aufgeführt. Hash SHA-256, Trenner <code>||</code>, NULL → <code>-1</code>. Hashdiffs laufen über alle fachlichen Quellspalten — aufgeführt sind nur Spalten mit Funktion.</p>
+    <p><b>Entscheidung <YYYY-MM-DD>:</b> <Modellierungsentscheidung mit Begründung/Precedent></p>
+    <p><b>Offen:</b> <offene Punkte></p>
+  </div>
+
+  <!-- VERBINDUNGEN: eine SVG-Ebene, Linien vor den Boxen im Markup -->
+  <svg width="2560" height="1600" style="position:absolute;left:0;top:0;pointer-events:none;" viewBox="0 0 2560 1600">
+    <!-- Hub ↔ Satellite -->
+    <line x1="300" y1="350" x2="340" y2="350" stroke="#9CA3AF" stroke-width="2"></line>
+    <!-- Hub ↔ Link -->
+    <line x1="590" y1="350" x2="640" y2="350" stroke="#D08A3E" stroke-width="2"></line>
+    <!-- Link ↔ Effectivity-Sat -->
+    <line x1="770" y1="410" x2="770" y2="440" stroke="#0F766E" stroke-width="2"></line>
+  </svg>
+
+  <!-- SATELLITE -->
+  <div class="box sat" style="left:40px;top:280px;width:260px;height:140px;">
+    <div class="bar"></div>
+    <div class="body">
+      <h3>sat_<entity>__<quelle></h3>
+      <div class="src"><span class="srcl">Quelle</span>ext_<quelle>_<tabelle>_main</div>
+      <div class="field"><span class="k">PK</span>hk_<entity> <span class="muted">(FK hub_<entity>)</span></div>
+      <div class="field"><span class="k hd">HD</span>hd_<entity>__<source> <span class="ar">←</span> <span class="muted">Payload</span></div>
+      <div class="field"><span class="k fk">ATT</span><spalte> <span class="muted">(<Funktion>)</span></div>
+      <div class="badges"><span class="badge ok">im Branch</span></div>
+    </div>
+  </div>
+
+  <!-- HUB (Multi-Source: je Quelle eine .src-Zeile) -->
+  <div class="box hub" style="left:340px;top:292px;width:250px;height:115px;">
+    <div class="bar"></div>
+    <div class="body">
+      <h3>hub_<entity></h3>
+      <div class="src"><span class="srcl">Quelle</span>ext_<quelle>_<tabelle>_main</div>
+      <div class="field"><span class="k">PK</span>hk_<entity> <span class="ar">←</span> <bk_spalte></div>
+      <div class="badges"><span class="badge ok">im Branch</span></div>
+    </div>
+  </div>
+
+  <!-- LINK -->
+  <div class="box link" style="left:640px;top:280px;width:260px;height:130px;">
+    <div class="bar"></div>
+    <div class="body">
+      <h3>link_<a>_<b></h3>
+      <div class="src"><span class="srcl">Quelle</span>ext_<quelle>_<tabelle>_main</div>
+      <div class="field"><span class="k">PK</span>hk_link_<a>_<b> <span class="ar">←</span> <a_spalte>, <b_spalte></div>
+      <div class="field"><span class="k fk">FK</span>hk_<a> <span class="ar">←</span> <a_spalte></div>
+      <div class="field"><span class="k fk">FK</span>hk_<b> <span class="ar">←</span> <b_spalte></div>
+    </div>
+  </div>
+
+  <!-- EFFECTIVITY-SATELLITE (am Link) -->
+  <div class="box effsat" style="left:640px;top:440px;width:260px;height:150px;">
+    <div class="bar"></div>
+    <div class="body">
+      <h3>sat_<a>_<b>_eff__<quelle></h3>
+      <div class="field"><span class="k">PK</span>hk_link_<a>_<b></div>
+      <div class="field"><span class="k fk">DFK</span>hk_<a></div>
+      <div class="field"><span class="k fk">SFK</span>hk_<b></div>
+      <div class="field"><span class="k dt">DT</span>start_date <span class="ar">←</span> <start_spalte></div>
+      <div class="field"><span class="k dt">DT</span>end_date <span class="ar">←</span> <end_spalte></div>
+    </div>
+  </div>
+
+  <!-- MULTI-ACTIVE-SATELLITE -->
+  <div class="box masat" style="left:40px;top:640px;width:260px;height:120px;">
+    <div class="bar"></div>
+    <div class="body">
+      <h3>sat_<entity>_ma__<quelle></h3>
+      <div class="src"><span class="srcl">Quelle</span>ext_<quelle>_<tabelle>_main</div>
+      <div class="field"><span class="k">PK</span>hk_<entity></div>
+      <div class="field"><span class="k fk">CDK</span><dependent_key></div>
+      <div class="field"><span class="k hd">HD</span>hd_<entity>_ma__<source> <span class="ar">←</span> <span class="muted">Payload</span></div>
+    </div>
+  </div>
+
+  <!-- TRANSACTION LINK -->
+  <div class="box tlink" style="left:340px;top:640px;width:260px;height:130px;">
+    <div class="bar"></div>
+    <div class="body">
+      <h3>link_<event>_tl</h3>
+      <div class="src"><span class="srcl">Quelle</span>ext_<quelle>_<tabelle>_main</div>
+      <div class="field"><span class="k">PK</span>hk_link_<event>_tl <span class="ar">←</span> <spalten></div>
+      <div class="field"><span class="k fk">FK</span>hk_<a> <span class="ar">←</span> <a_spalte></div>
+      <div class="field"><span class="k fk">FK</span>hk_<b> <span class="ar">←</span> <b_spalte></div>
+    </div>
+  </div>
+
+  <!-- REFERENCE TABLE -->
+  <div class="box ref" style="left:640px;top:640px;width:260px;height:100px;">
+    <div class="bar"></div>
+    <div class="body">
+      <h3>ref_<name>_v</h3>
+      <div class="src"><span class="srcl">Quelle</span>ext_<quelle>_<tabelle>_main</div>
+      <div class="field"><span class="k">BK</span><natural_key> <span class="muted">(kein Hash)</span></div>
+    </div>
+  </div>
+
+  <!-- Seitennotiz für Hubs ohne Link zum Zentrum -->
+  <div class="side-note" style="left:40px;top:432px;width:560px;">kein Link zu hub_<zentrum> — <spalte> bleibt Attribut im Hashdiff (Option A)</div>
+
+  <!-- Hinweis- und Offen-Badges (in einer Box) -->
+  <!-- <div class="hint">Noch kein Satellite für <spalten></div> -->
+  <!-- <div class="badges"><span class="badge open">Grain offen</span><span class="badge info">bestehend (<Quelle>)</span></div> -->
+</div>

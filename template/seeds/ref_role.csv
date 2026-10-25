@@ -1,0 +1,4 @@
+role_code,role_name,role_description
+CLIENT,Client,Purchases goods or services
+CONTRACTOR,Contractor,Provides contracted services
+SUPPLIER,Supplier,Supplies goods or materials

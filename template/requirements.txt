@@ -1,0 +1,9 @@
+# Python-Abhängigkeiten für dbt (lokal, CI, Load-Workflows) — bewusst fest gepinnt.
+# Ungepinnt holt pip neue Major-/Minor-Stände: dbt-sqlserver 1.12 macht pyodbc optional,
+# das Profil nutzt aber das pyodbc-Backend -> "optional dependency pyodbc is not installed".
+# Update: lokal testen (dbt debug + dbt build), dann hier gemeinsam anheben.
+dbt-core==1.11.2
+dbt-sqlserver==1.9.0
+dbt-fabric==1.9.3
+pyodbc==5.1.0
+azure-identity==1.25.3

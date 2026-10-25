@@ -1,0 +1,65 @@
+{
+  "collapse-filter": false,
+  "search": "-path:/^README/ -file:changelog",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": true,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {
+      "query": "path:\"01-benutzer/\"",
+      "color": {
+        "a": 1,
+        "rgb": 3770341
+      }
+    },
+    {
+      "query": "path:\"02-entwickler/\"",
+      "color": {
+        "a": 1,
+        "rgb": 33536
+      }
+    },
+    {
+      "query": "path:\"03-system/\"",
+      "color": {
+        "a": 1,
+        "rgb": 13206784
+      }
+    },
+    {
+      "query": "path:\"04-mandant-architektur/\"",
+      "color": {
+        "a": 1,
+        "rgb": 14895432
+      }
+    },
+    {
+      "query": "path:\"schulung/\"",
+      "color": {
+        "a": 1,
+        "rgb": 1814394
+      }
+    },
+    {
+      "query": "path:\"lessons-learned/\"",
+      "color": {
+        "a": 1,
+        "rgb": 9330646
+      }
+    }
+  ],
+  "collapse-display": true,
+  "showArrow": false,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1.2,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": true,
+  "centerStrength": 0.5,
+  "repelStrength": 12,
+  "linkStrength": 1,
+  "linkDistance": 180,
+  "scale": 1,
+  "close": true
+}
