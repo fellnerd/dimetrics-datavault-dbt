@@ -1,0 +1,17 @@
+# This file is managed by Copier — do not delete it. It records the answers given
+# when this project was generated and is required for `copier update` to work.
+_commit: v1.4.3
+_src_path: gh:fellnerd/datavault-dbt-boilerplate
+author_name: Daniel Fellner
+company_name: Dimetrics
+database_name: datavault
+github_org: fellnerd
+hash_algorithm: SHA
+include_example: false
+include_infra: false
+mart_schema: mart
+profile_name: datavault
+project_name: datavault
+schema_prefix: vault
+staging_schema: stg
+warehouse_server_example: sqlbi01.database.windows.net

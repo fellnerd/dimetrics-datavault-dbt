@@ -1,0 +1,110 @@
+name: 'datavault'
+version: '1.0.0'
+config-version: 2
+
+profile: 'datavault'
+
+# OLS: SELECT-Grants auf mart*-Views nach jedem Lauf neu setzen (macros/security/grant_select_on_views.sql).
+# Ohne Eintraege in var ols_view_grants ein No-op. Ladeprotokoll optional aktivieren:
+#   einmalig `dbt run-operation create_load_status_table`, dann hier
+#   - "{{ log_load_status(results) }}" ergaenzen.
+on-run-end:
+  - "{{ grant_select_on_views() }}"
+
+# automate_dv dispatch: Eigene Macros (z. B. hash_override.sql) haben Vorrang
+dispatch:
+  - macro_namespace: automate_dv
+    search_order: ['datavault', 'automate_dv']
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+seeds:
+  datavault:
+    +schema: seed
+
+vars:
+  # Mandantenschluessel fuer dss_sec_value_key (macros/security/tenant_key.sql)
+  tenant_key: 'datavault'
+
+  # OLS: Principal (Entra-Gruppe/User) -> Mart-Schemas, deren _v-Views er lesen darf.
+  # Beispiel:
+  #   <gruppen-prefix>-finance-ro: ['mart', 'mart_finance']
+  ols_view_grants: {}
+
+  # Hash algorithm: MD5 (16 byte) or SHA (32 byte)
+  hash: 'SHA'
+
+  # NULL placeholder for hash calculation
+  null_placeholder_string: '-1'
+
+  # Separator for multi-column hashing (automate_dv default)
+  concat_string: '||'
+
+  # No UPPER() on hash inputs (case-sensitive data)
+  hash_content_casing: 'DISABLED'
+
+  # SQL Server reserved keyword escaping
+  escape_char_left: '['
+  escape_char_right: ']'
+
+  # Load date column
+  load_date: 'dss_load_date'
+
+  # Record source column
+  record_source: 'dss_record_source'
+
+# ===========================================
+# SCHEMA NAMING CONVENTION
+# ===========================================
+# [stg].[stg_<entity>]                          - Staging Views
+# [vault].[hub|sat|link_<entity>]                  - Cross-source Vault objects (_common)
+# [vault_<source>].[hub|sat|link_<entity>]         - Source-system-specific Vault objects
+# [mart].[<object>]                                 - Cross-domain Mart objects
+# [mart_<domain>].[<object>]                        - Domain-specific Mart objects
+
+models:
+  datavault:
+    staging:
+      +schema: stg
+      +materialized: view
+    raw_vault:
+      # ===== COMMON (Schema: vault) =====
+      # Cross-source objects merged from multiple systems
+      _common:
+        hubs:
+          +schema: vault
+          +materialized: incremental
+          +incremental_strategy: append
+          +on_schema_change: append_new_columns
+          +as_columnstore: false
+        satellites:
+          +schema: vault
+          +materialized: incremental
+          +incremental_strategy: append
+          +on_schema_change: append_new_columns
+          +as_columnstore: false
+        links:
+          +schema: vault
+          +materialized: incremental
+          +incremental_strategy: append
+          +on_schema_change: append_new_columns
+          +as_columnstore: false
+    business_vault:
+      +schema: vault
+      +materialized: table
+      +as_columnstore: false
+    mart:
+      # ===== COMMON (Schema: mart) =====
+      _common:
+        +schema: mart
+        +materialized: table
+        +as_columnstore: false

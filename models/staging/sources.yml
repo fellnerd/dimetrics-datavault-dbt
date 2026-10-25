@@ -1,0 +1,7 @@
+version: 2
+sources:
+  - name: staging
+    description: External Tables via PolyBase (Parquet from ADLS)
+    database: "{{ target.database }}"
+    schema: stg
+    tables: []

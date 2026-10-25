@@ -1,0 +1,15 @@
+{
+  "useMarkdownLinks": true,
+  "newLinkFormat": "relative",
+  "alwaysUpdateLinks": true,
+  "showInlineTitle": false,
+  "newFileLocation": "current",
+  "attachmentFolderPath": "./assets",
+  "userIgnoreFilters": [
+    "vorlagen/",
+    "CLAUDE.md"
+  ],
+  "readableLineLength": true,
+  "propertiesInDocument": "visible",
+  "promptDelete": false
+}
