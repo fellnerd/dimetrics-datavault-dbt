@@ -1,7 +1,0 @@
-version: 2
-
-models: []
-  # =============================================================================
-  # POINT-IN-TIME TABLES
-  # =============================================================================
-  # (keine PITs definiert - als Referenz siehe design/business-vault/_template_pit.md)
