@@ -1,6 +1,6 @@
 {#
     Staging: stg_lead_engine__karriere_stelle
-    Quelle: base_lead_engine__karriere_stelle (Lead-Engine, source = 'karriere')
+    Quelle: base_lead_engine__karriere_stelle_delta (nur neue Laeufe; Lead-Engine, source = 'karriere')
     BK Stelle: stelle_bk (jobsItem.id, Text) · BK Firma: firma_bk (jobsItem.companyId, '-1' = anonym)
     Kollisionscode: karriere (Segment 2 von dss_business_key, Teil aller Hash Keys)
     Hashes: hk_stelle -> hub_stelle · hk_firma -> hub_firma (via __firma) · hk_link_stelle_firma
@@ -11,6 +11,7 @@
     Materialisierung: table (statt view), weil automate_dv.sat() die Quelle mehrfach liest (auch in einer korrelierten
     Unterabfrage je Zeile) und SQL Server eine View samt Hash-Berechnung sonst jedes Mal neu auswertet.
     Version: 2026-10-26 V1.2 als Tabelle materialisiert
+    Version: 2026-10-26 V1.3 Delta: liest nur Laeufe, die der Vault noch nicht verarbeitet hat
 #}
 {{ config(
     materialized='table',
@@ -18,7 +19,7 @@
     post_hook=["{{ create_hash_index('hk_stelle') }}"]
 ) }}
 {%- set yaml_metadata -%}
-source_model: base_lead_engine__karriere_stelle
+source_model: base_lead_engine__karriere_stelle_delta
 derived_columns:
   dss_record_source: "!lead-engine/karriere"
   dss_load_date: "COALESCE(TRY_CAST(fetched_at AS DATETIME2), GETDATE())"

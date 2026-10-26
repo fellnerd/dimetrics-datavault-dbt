@@ -1,6 +1,6 @@
 {#
     Staging: stg_lead_engine__website_stelle
-    Quelle: base_lead_engine__website_stelle (Lead-Engine, source = 'website')
+    Quelle: base_lead_engine__website_stelle_delta (nur neue Laeufe; Lead-Engine, source = 'website')
     BK Stelle: stelle_bk (Domain|normalisierter Titel) · BK Firma: firma_bk (Domain aus company.url)
     Kollisionscode: website
     Hashes: hk_stelle -> hub_stelle · hk_firma -> hub_firma (via __firma) · hk_link_stelle_firma
@@ -11,6 +11,7 @@
     Materialisierung: table (statt view), weil automate_dv.sat() die Quelle mehrfach liest (auch in einer korrelierten
     Unterabfrage je Zeile) und SQL Server eine View samt Hash-Berechnung sonst jedes Mal neu auswertet.
     Version: 2026-10-26 V1.2 als Tabelle materialisiert
+    Version: 2026-10-26 V1.3 Delta: liest nur Laeufe, die der Vault noch nicht verarbeitet hat
 #}
 {{ config(
     materialized='table',
@@ -18,7 +19,7 @@
     post_hook=["{{ create_hash_index('hk_stelle') }}"]
 ) }}
 {%- set yaml_metadata -%}
-source_model: base_lead_engine__website_stelle
+source_model: base_lead_engine__website_stelle_delta
 derived_columns:
   dss_record_source: "!lead-engine/website"
   dss_load_date: "COALESCE(TRY_CAST(fetched_at AS DATETIME2), GETDATE())"

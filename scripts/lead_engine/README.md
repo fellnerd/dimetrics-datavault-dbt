@@ -17,3 +17,9 @@ Hinweise
 - Pro Glob ein eigener Resource-Name (`filesystem`, `filesystem_runs`): der Incremental-Zustand ist je Name getrennt.
 - Zustand liegt in `landing._dlt_pipeline_state`; Tabellen nie ohne Zurücksetzen des Zustands löschen (sonst wird nicht neu geladen).
 - Danach: `dbt run --select path:models/base/lead_engine path:models/staging/stg_lead_engine__* path:models/raw_vault/_common`
+
+Verarbeitung in dbt (inkrementell)
+- Base-Tabellen `base_lead_engine__*_stelle` übernehmen nur abgeschlossene Läufe (neueste Datei des Laufs ≥ 30 Min. alt) mit größerer `run_id`.
+  Neue Leads erscheinen daher frühestens 30 Minuten nach Ende eines Collector-Laufs.
+- Das Laufprotokoll (`landing.lead_engine_lauf`) wird dafür nicht mehr verwendet: seit Collector 0.3.0 (Dagster) hat es eine andere `run_id` als die Dateien.
+- Quellen ohne Modell (z. B. `source = 'freelancer'`) werden zwar geladen, aber nicht verarbeitet.

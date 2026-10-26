@@ -8,6 +8,13 @@
              Neue Payload-Spalte per on_schema_change append_new_columns; aeltere Zeilen NULL.
 #}
 
+{#- Wird je Quelle als LETZTES Objekt geladen: sein Wasserstand (max run_id) steuert das Delta im Staging
+    (lead_engine_delta). Daher abhaengig von allen anderen Konsumenten desselben Stagings. -#}
+-- depends_on: {{ ref('hub_stelle') }}
+-- depends_on: {{ ref('hub_firma') }}
+-- depends_on: {{ ref('link_stelle_firma') }}
+-- depends_on: {{ ref('sat_stelle__karriere') }}
+-- depends_on: {{ ref('sat_firma__karriere') }}
 {{ config(
     materialized='incremental',
     as_columnstore=false,
