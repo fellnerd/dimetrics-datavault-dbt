@@ -1,6 +1,6 @@
 {#
     Hub: hub_stelle
-    Source: stg_lead_engine__{karriere,theirstack,website}_stelle (Multi-Source)
+    Source: stg_lead_engine__{karriere,theirstack,website,freelancer}_stelle (Multi-Source)
     Business Key: collision_code + stelle_bk (Anzeigen-ID der Quelle; website: Domain|Titel)
     Version: 2026-10-25 V1.0 Initialversion
 #}
@@ -16,6 +16,7 @@ source_model:
   - "stg_lead_engine__karriere_stelle"
   - "stg_lead_engine__theirstack_stelle"
   - "stg_lead_engine__website_stelle"
+  - "stg_lead_engine__freelancer_stelle"
 src_pk: "hk_stelle"
 src_nk:
   - "collision_code"

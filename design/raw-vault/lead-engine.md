@@ -1,6 +1,6 @@
 # Raw Vault: Lead-Engine
 
-Quelle: `design/implementierungsplan.md`. Kollisionscode je Quelle (`karriere`, `theirstack`, `website`) in allen Hash Keys.
+Quelle: `design/implementierungsplan.md`. Kollisionscode je Quelle (`karriere`, `theirstack`, `website`, `freelancer`; freelancer ohne Firma/Link) in allen Hash Keys.
 
 ```mermaid
 erDiagram
@@ -12,6 +12,8 @@ erDiagram
     hub_stelle ||--o{ sat_stelle_sichtung__karriere : hk_stelle
     hub_stelle ||--o{ sat_stelle_sichtung__theirstack : hk_stelle
     hub_stelle ||--o{ sat_stelle_sichtung__website : hk_stelle
+    hub_stelle ||--o{ sat_stelle__freelancer : hk_stelle
+    hub_stelle ||--o{ sat_stelle_sichtung__freelancer : hk_stelle
     hub_firma ||--o{ sat_firma__karriere : hk_firma
     hub_firma ||--o{ sat_firma__theirstack : hk_firma
     hub_stelle { char hk_stelle PK

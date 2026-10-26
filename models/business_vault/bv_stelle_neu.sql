@@ -15,6 +15,8 @@ WITH sichtung AS (
     SELECT hk_stelle, run_id, query_ids, dss_load_date FROM {{ ref('sat_stelle_sichtung__theirstack') }}
     UNION ALL
     SELECT hk_stelle, run_id, query_ids, dss_load_date FROM {{ ref('sat_stelle_sichtung__website') }}
+    UNION ALL
+    SELECT hk_stelle, run_id, query_ids, dss_load_date FROM {{ ref('sat_stelle_sichtung__freelancer') }}
 ),
 
 erster_lauf AS (
@@ -44,14 +46,14 @@ SELECT
     h.hk_stelle,
     h.collision_code                                                  AS quelle,
     h.stelle_bk,
-    COALESCE(k.title, t.title, w.title)                               AS titel,
+    COALESCE(k.title, t.title, w.title, fl.title)                               AS titel,
     CASE WHEN f.firma_bk = '-1' THEN NULL
          ELSE COALESCE(fk.company_name, ft.company_name, f.firma_bk) END AS firma,
-    COALESCE(k.locations, t.location)                                 AS ort,
-    COALESCE(k.link, t.url, w.url)                                    AS url,
-    k.salary                                                          AS gehalt,
+    COALESCE(k.locations, t.location, fl.location)                                 AS ort,
+    COALESCE(k.link, t.url, w.url, fl.url)                                    AS url,
+    COALESCE(k.salary, fl.budget)                                     AS gehalt,
     t.seniority                                                       AS seniority,
-    COALESCE(k.posted_date, t.date_posted)                            AS veroeffentlicht_am,
+    COALESCE(k.posted_date, t.date_posted, fl.veroeffentlicht_am)                            AS veroeffentlicht_am,
     e.erstmals_gesehen,
     e.run_id,
     sc.query_ids,
@@ -64,6 +66,7 @@ LEFT JOIN sichtung sc ON sc.hk_stelle = e.hk_stelle AND sc.run_id = e.run_id
 LEFT JOIN {{ ref('sat_stelle__karriere') }} k ON k.hk_stelle = h.hk_stelle AND k.dss_is_current = 'Y'
 LEFT JOIN {{ ref('sat_stelle__theirstack') }} t ON t.hk_stelle = h.hk_stelle AND t.dss_is_current = 'Y'
 LEFT JOIN {{ ref('sat_stelle__website') }} w ON w.hk_stelle = h.hk_stelle AND w.dss_is_current = 'Y'
+LEFT JOIN {{ ref('sat_stelle__freelancer') }} fl ON fl.hk_stelle = h.hk_stelle AND fl.dss_is_current = 'Y'
 LEFT JOIN link_aktuell la ON la.hk_stelle = h.hk_stelle
 LEFT JOIN {{ ref('hub_firma') }} f ON f.hk_firma = la.hk_firma
 LEFT JOIN {{ ref('sat_firma__karriere') }} fk ON fk.hk_firma = f.hk_firma AND fk.dss_is_current = 'Y'

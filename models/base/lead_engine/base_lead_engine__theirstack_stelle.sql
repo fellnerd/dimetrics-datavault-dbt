@@ -41,9 +41,9 @@ with items as (
       -- (Das Laufprotokoll taugt nicht: seit Collector 0.3.0/Dagster hat es eine andere run_id als die Dateien.)
       and f.run_id in (select run_id from {{ source('lead_engine', 'lead_engine_datei') }}
                        group by run_id
-                       having max(fetched_at) < dateadd(minute, -30, sysdatetimeoffset()))
+                       having max(fetched_at) < dateadd(minute, -{{ var('lead_engine_ruhezeit_minuten', 30) }}, sysdatetimeoffset()))
       {% if is_incremental() %}
-      and f.run_id > (select max(run_id) from {{ this }})
+      and f.run_id > coalesce((select max(run_id) from {{ this }}), '')
       {% endif %}
 ),
 

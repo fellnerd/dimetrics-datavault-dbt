@@ -6,6 +6,7 @@ CASE {{ collision_code }}
     WHEN 'karriere'   THEN N'karriere.at'
     WHEN 'theirstack' THEN N'TheirStack'
     WHEN 'website'    THEN N'Firmenwebsite'
+    WHEN 'freelancer' THEN N'freelancer.at'
     ELSE CAST({{ collision_code }} AS NVARCHAR(255))
 END
 {%- endmacro %}

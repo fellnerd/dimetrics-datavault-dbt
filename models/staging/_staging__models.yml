@@ -67,3 +67,32 @@ models:
     description: "Base-View: Website-Payload, dedupliziert je Lauf, Domain und normalisiertem Titel."
   - name: base_lead_engine__lauf_abfrage
     description: "Monitoring: eine Zeile je Lauf und Abfrage aus dem Laufprotokoll (items gegen total_reported, truncated, error)."
+
+  - name: stg_lead_engine__freelancer_stelle
+    description: "Staging freelancer.at (Lead-Engine): Auftrag je Lauf aus Liste + Detail, nur neue Läufe (Delta). BK Stelle stelle_bk = Auftrags-ID, kein Firmen-Hub (Auftraggeber unbekannt)."
+    columns:
+      - name: hk_stelle
+        data_tests: [not_null]
+      - name: stelle_bk
+        data_tests: [not_null]
+      - name: dss_business_key
+        data_tests: [not_null]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [run_id, stelle_bk]
+
+  - name: base_lead_engine__freelancer_liste
+    description: "Base-Tabelle (incremental): Aufträge der Listenseiten (query_id liste), eine Zeile je Lauf und Auftrags-ID, inkl. profil_ids aus profil_treffer."
+  - name: base_lead_engine__freelancer_auftrag
+    description: "Base-Tabelle (incremental): Detaildateien (query_id details), eine Zeile je Lauf und Auftrags-ID, mit voller Beschreibung und Kategorie."
+  - name: base_lead_engine__freelancer_stelle
+    description: "Base-View: Liste + jüngstes Detail (bis zu diesem Lauf) je Lauf und Auftrags-ID."
+  - name: base_lead_engine__freelancer_stelle_delta
+    description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat (Wasserstand: Sichtungs-Satellit freelancer)."
+  - name: base_lead_engine__karriere_stelle_delta
+    description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."
+  - name: base_lead_engine__theirstack_stelle_delta
+    description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."
+  - name: base_lead_engine__website_stelle_delta
+    description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."

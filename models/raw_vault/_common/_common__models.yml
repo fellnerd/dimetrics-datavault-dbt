@@ -81,3 +81,11 @@ models:
   - name: sat_stelle_sichtung__website
     description: "Sichtungs-Satellit, Quelle Website."
     columns: *sat_stelle_columns
+
+  - name: sat_stelle__freelancer
+    description: "Attribute der Stelle (Auftrag) von freelancer.at: Titel, URL, Beschreibung, Kategorie, Budget, Ort, Status."
+    columns: *sat_stelle_columns
+
+  - name: sat_stelle_sichtung__freelancer
+    description: "Sichtungs-Satellit, Quelle freelancer.at."
+    columns: *sat_stelle_columns
