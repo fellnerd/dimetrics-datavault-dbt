@@ -3,7 +3,13 @@
     Speist hub_firma aus stg_lead_engine__website_stelle (kein Firmen-Satellit fuer website).
     dss_business_key bildet den Schluessel der Firma (nicht der Stelle).
     Version: 2026-10-25 V1.0 Initialversion
+    Version: 2026-10-26 V1.1 als Tabelle materialisiert (siehe stg_lead_engine__website_stelle)
 #}
+{{ config(
+    materialized='table',
+    as_columnstore=false,
+    post_hook=["{{ create_hash_index('hk_firma') }}"]
+) }}
 SELECT
     hk_firma,
     collision_code,

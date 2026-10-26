@@ -9,7 +9,15 @@
     Nicht im Hashdiff: description, Geodaten
     Version: 2026-10-25 V1.0 Initialversion
     Version: 2026-10-25 V1.1 profil_ids (Suchprofil, das die Stelle im Lauf gefunden hat)
+    Materialisierung: table (statt view), weil automate_dv.sat() die Quelle mehrfach liest (auch in einer korrelierten
+    Unterabfrage je Zeile) und SQL Server eine View samt Hash-Berechnung sonst jedes Mal neu auswertet.
+    Version: 2026-10-26 V1.2 als Tabelle materialisiert
 #}
+{{ config(
+    materialized='table',
+    as_columnstore=false,
+    post_hook=["{{ create_hash_index('hk_stelle') }}"]
+) }}
 {%- set yaml_metadata -%}
 source_model: base_lead_engine__theirstack_stelle
 derived_columns:

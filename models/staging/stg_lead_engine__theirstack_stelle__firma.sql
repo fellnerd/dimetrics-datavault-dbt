@@ -4,7 +4,13 @@
     dss_business_key bildet den Schluessel der Firma (nicht der Stelle).
     Dedupliziert je Firma und Lauf, damit der Satellit eine Zeile je Lauf bekommt.
     Version: 2026-10-25 V1.0 Initialversion
+    Version: 2026-10-26 V1.1 als Tabelle materialisiert (siehe stg_lead_engine__theirstack_stelle)
 #}
+{{ config(
+    materialized='table',
+    as_columnstore=false,
+    post_hook=["{{ create_hash_index('hk_firma') }}"]
+) }}
 SELECT
     hk_firma,
     collision_code,

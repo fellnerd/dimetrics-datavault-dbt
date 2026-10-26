@@ -11,6 +11,7 @@
 {{ config(
     materialized='incremental',
     as_columnstore=false,
+    meta={'apply_source_filter': true},
     post_hook=[
         "{{ create_hash_index('hk_stelle') }}",
         "{{ update_satellite_current_flag(this, 'hk_stelle') }}"

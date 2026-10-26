@@ -1,12 +1,13 @@
 {#
-    Base-View: base_lead_engine__karriere_stelle
+    Base-Tabelle (incremental, append): base_lead_engine__karriere_stelle
     Quelle: landing.lead_engine_datei (source = 'karriere')
     Grain: eine Zeile je Lauf (run_id) und Anzeigen-ID
     Payload: $.data.jobsSearchList.activeItems.items[*].jobsItem
     Version: 2026-10-25 V1.0 Initialversion
     Version: 2026-10-25 V1.1 profil_ids (Suchprofil, das die Stelle im Lauf gefunden hat)
+    Version: 2026-10-26 V1.2 incremental: nur vollstaendige Laeufe (Laufprotokoll vorhanden) mit run_id > bisherigem Maximum
 #}
-{{ config(materialized='view') }}
+{{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
 with items as (
     select
@@ -35,6 +36,11 @@ with items as (
         company_link          nvarchar(400) '$.company.link'
     ) j
     where f.source = 'karriere'
+      -- nur vollstaendige Laeufe: das Laufprotokoll wird erst am Ende eines Collector-Laufs geschrieben
+      and f.run_id in (select run_id from {{ source('lead_engine', 'lead_engine_lauf') }})
+      {% if is_incremental() %}
+      and f.run_id > (select max(run_id) from {{ this }})
+      {% endif %}
 ),
 
 queries as (
