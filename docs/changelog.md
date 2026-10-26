@@ -22,6 +22,7 @@ Alle fachlich oder technisch relevanten Änderungen an Modellen, Macros, Pipelin
 
 | Datum | Version | Bereich | Änderung | Ticket/Commit |
 |-------|---------|---------|----------|---------------|
+| 2026-10-26 | | mart | Neue publizierte View `mart_lead_engine.lead_kandidaten_v`: 1 Zeile je Firma mit Sichtung in den letzten 60 Tagen (Profil-Treffer, ohne Vermittler) mit Stellenzahlen, Quellen, Profilen, Sichtungszeitraum und Stellentiteln, für die Bewertung per MCP/Skill. Noch ohne `ist_gesperrt` und Firmenbuch-Felder | |
 | 2026-10-26 | | staging | Lead-Engine Quelle `adzuna`: `base_lead_engine__adzuna_stelle` (+ Delta), `stg_lead_engine__adzuna_stelle` und `__firma`. BK Stelle = Adzuna-ID, BK Firma = normierter Firmenname (keine Firmen-ID/Website). Noch ohne Daten in der Landing-Tabelle gebaut, Parsing nur an Beispiel-JSON geprüft | |
 | 2026-10-26 | | raw-vault | `hub_stelle`, `hub_firma`, `link_stelle_firma` um Adzuna erweitert; neu `sat_stelle__adzuna`, `sat_firma__adzuna`, `sat_stelle_sichtung__adzuna` | |
 | 2026-10-26 | | mart | Adzuna in `dim_quelle`, `dim_stelle`, `dim_firma`, `fakt_stelle`, `fakt_stelle_sichtung`, `bv_stelle_neu`; `ist_online` ist für Adzuna NULL (jede Anzeige kommt nur einmal, Fehlen im jüngsten Lauf heißt nicht offline) | |

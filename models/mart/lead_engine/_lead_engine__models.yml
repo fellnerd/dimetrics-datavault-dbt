@@ -97,3 +97,16 @@ models:
     description: "Publizierte View auf fakt_stelle_sichtung."
   - name: fakt_stelle_v
     description: "Publizierte View auf fakt_stelle."
+
+  - name: lead_kandidaten_v
+    description: |
+      Publizierte View: 1 Zeile je Firma mit Sichtung in den letzten 60 Tagen (Suchprofil-Treffer, ohne Vermittler), mit Anzahl Stellen
+      (30/60 Tage), Quellen, Profilen, erster/letzter Sichtung und den Stellentiteln. Dieselbe Firma aus mehreren Quellen erscheint
+      mehrfach, bis ein Same-as-Link existiert. Offen: ist_gesperrt, Firmenbuch-Felder.
+    columns:
+      - name: firma_key
+        data_tests: [not_null, unique]
+      - name: firma_name
+        data_tests: [not_null]
+      - name: anzahl_stellen_60t
+        data_tests: [not_null]
