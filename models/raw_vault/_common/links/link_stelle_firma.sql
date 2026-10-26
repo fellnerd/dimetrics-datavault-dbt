@@ -1,6 +1,6 @@
 {#
     Link: link_stelle_firma
-    Source: stg_lead_engine__{karriere,theirstack,website}_stelle
+    Source: stg_lead_engine__{karriere,theirstack,website,adzuna}_stelle
     Foreign Keys: hk_stelle, hk_firma
     Version: 2026-10-25 V1.0 Initialversion
 #}
@@ -16,6 +16,7 @@ source_model:
   - "stg_lead_engine__karriere_stelle"
   - "stg_lead_engine__theirstack_stelle"
   - "stg_lead_engine__website_stelle"
+  - "stg_lead_engine__adzuna_stelle"
 src_pk: "hk_link_stelle_firma"
 src_fk:
   - "hk_stelle"

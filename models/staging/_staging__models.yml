@@ -108,3 +108,18 @@ models:
         data_tests: [not_null]
   - name: base_lead_engine__firmenprofil
     description: "Base-Tabelle (incremental): Firmenprofile (source firmenprofil), eine Zeile je Lauf, Quelle und company_id."
+
+  - name: stg_lead_engine__adzuna_stelle
+    description: "Staging Adzuna (Lead-Engine): Anzeige je Lauf, nur neue Läufe (Delta). BK Stelle = Adzuna-ID, BK Firma = normierter Firmenname ('-1' ohne Namen)."
+    columns: *stg_stelle_columns
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [run_id, stelle_bk]
+  - name: stg_lead_engine__adzuna_stelle__firma
+    description: "FK-Staging: Firma aus Adzuna-Anzeigen (normierter Name), je Firma und Lauf dedupliziert."
+    columns: *stg_firma_columns
+  - name: base_lead_engine__adzuna_stelle
+    description: "Base-Tabelle (incremental): Adzuna-Anzeigen aus payload.results, eine Zeile je Lauf und Anzeigen-ID, query_ids/profil_ids je Lauf."
+  - name: base_lead_engine__adzuna_stelle_delta
+    description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."

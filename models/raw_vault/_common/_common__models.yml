@@ -93,3 +93,15 @@ models:
   - name: sat_firma__firmenprofil
     description: "Firmenattribute aus dem Firmenprofil der Quelle (Name, Profil-URL, Website)."
     columns: *sat_firma_columns
+
+  - name: sat_stelle__adzuna
+    description: "Attribute der Stelle von Adzuna: Titel, Beschreibung (Auszug), Ort, Kategorie, Gehalt, Vertrag, URL."
+    columns: *sat_stelle_columns
+
+  - name: sat_firma__adzuna
+    description: "Firmenattribute aus Adzuna (nur der Name; BK ist der normierte Name)."
+    columns: *sat_firma_columns
+
+  - name: sat_stelle_sichtung__adzuna
+    description: "Sichtungs-Satellit, Quelle Adzuna (jede Anzeige nur einmal, im Lauf nach ihrem Erscheinen)."
+    columns: *sat_stelle_columns

@@ -1,6 +1,6 @@
 {#
     Hub: hub_firma
-    Source: stg_lead_engine__{karriere,theirstack,website}_stelle__firma (FK-Staging) und stg_lead_engine__firmenprofil_firma (Multi-Source)
+    Source: stg_lead_engine__{karriere,theirstack,website,adzuna}_stelle__firma (FK-Staging) und stg_lead_engine__firmenprofil_firma (Multi-Source)
     Business Key: collision_code + firma_bk (karriere companyId, theirstack company_object.id, website Domain; '-1' = unbekannt)
     Quelluebergreifende Zusammenfuehrung derselben Firma: spaeter Same-as-Link im Business Vault.
     Version: 2026-10-25 V1.0 Initialversion
@@ -18,6 +18,7 @@ source_model:
   - "stg_lead_engine__theirstack_stelle__firma"
   - "stg_lead_engine__website_stelle__firma"
   - "stg_lead_engine__firmenprofil_firma"
+  - "stg_lead_engine__adzuna_stelle__firma"
 src_pk: "hk_firma"
 src_nk:
   - "collision_code"

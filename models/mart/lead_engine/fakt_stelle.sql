@@ -1,10 +1,11 @@
 {#
     Mart: fakt_stelle
     Grain: 1 Zeile je Stelle und Quelle (Lebenszyklus der Anzeige aus den Sichtungen).
-    Quellen: sat_stelle_sichtung__{karriere,theirstack,website,freelancer}, hub_stelle,
+    Quellen: sat_stelle_sichtung__{karriere,theirstack,website,freelancer,adzuna}, hub_stelle,
              link_stelle_firma (juengste Zuordnung), hub_firma
     datum_key = Datum der ersten Sichtung; zuletzt_gesehen_datum_key = Datum der letzten Sichtung.
-    ist_online = 1, wenn die Stelle im juengsten Lauf ihrer Quelle noch gefunden wurde.
+    ist_online = 1, wenn die Stelle im juengsten Lauf ihrer Quelle noch gefunden wurde. Fuer Adzuna NULL (die Quelle liefert
+    jede Anzeige nur einmal, ein Fehlen im juengsten Lauf sagt nichts ueber den Status).
 #}
 {{ config(materialized='table', as_columnstore=false, tags=['fact']) }}
 
@@ -20,6 +21,9 @@ WITH sichtung AS (
     UNION ALL
     SELECT hk_stelle, run_id, dss_load_date
     FROM {{ ref('sat_stelle_sichtung__freelancer') }}
+    UNION ALL
+    SELECT hk_stelle, run_id, dss_load_date
+    FROM {{ ref('sat_stelle_sichtung__adzuna') }}
 ),
 
 je_stelle AS (
@@ -59,7 +63,9 @@ SELECT
     CONVERT(INT, FORMAT(CAST(j.zuletzt_gesehen AS DATE), 'yyyyMMdd'))            AS zuletzt_gesehen_datum_key,
     CAST(j.anzahl_laeufe AS INT)                                                 AS anzahl_laeufe,
     CAST(DATEDIFF(DAY, j.erstmals_gesehen, j.zuletzt_gesehen) + 1 AS INT)        AS tage_sichtbar,
-    CAST(CASE WHEN j.letzter_run_id = r.letzter_run_id THEN 1 ELSE 0 END AS INT) AS ist_online,
+    -- Adzuna liefert jede Anzeige nur einmal (Delta): "im juengsten Lauf nicht gesehen" heisst dort nicht "offline"
+    CASE WHEN h.collision_code = 'adzuna' THEN CAST(NULL AS INT)
+         WHEN j.letzter_run_id = r.letzter_run_id THEN 1 ELSE 0 END               AS ist_online,
     j.letzter_run_id,
     j.zuletzt_gesehen                                                            AS dss_load_date,
     h.dss_record_source

@@ -5,7 +5,7 @@
            (profilübergreifend: DISTINCTCOUNT ueber stelle_key/run_id).
     profil_id: degenerierte Dimension (Suchprofil aus der Tabelle, z. B. data-bi, online-marketing);
                Sichtungen vor Einfuehrung der Suchprofile (25.10.2026) = data-bi.
-    Quellen: sat_stelle_sichtung__{karriere,theirstack,website,freelancer}, hub_stelle,
+    Quellen: sat_stelle_sichtung__{karriere,theirstack,website,freelancer,adzuna}, hub_stelle,
              link_stelle_firma (juengste Zuordnung), hub_firma
     Keys: gleiche surrogate_key()-Ausdruecke wie dim_stelle, dim_firma, dim_quelle; datum_key = Abrufdatum der Sichtung
 #}
@@ -23,6 +23,9 @@ WITH sichtung AS (
     UNION ALL
     SELECT hk_stelle, run_id, query_ids, profil_ids, dss_load_date, dss_record_source
     FROM {{ ref('sat_stelle_sichtung__freelancer') }}
+    UNION ALL
+    SELECT hk_stelle, run_id, query_ids, profil_ids, dss_load_date, dss_record_source
+    FROM {{ ref('sat_stelle_sichtung__adzuna') }}
 ),
 
 link_aktuell AS (
