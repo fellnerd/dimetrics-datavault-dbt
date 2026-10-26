@@ -13,6 +13,7 @@ erDiagram
     hub_stelle ||--o{ sat_stelle_sichtung__theirstack : hk_stelle
     hub_stelle ||--o{ sat_stelle_sichtung__website : hk_stelle
     hub_stelle ||--o{ sat_stelle__freelancer : hk_stelle
+    hub_firma ||--o{ sat_firma__firmenprofil : hk_firma
     hub_stelle ||--o{ sat_stelle_sichtung__freelancer : hk_stelle
     hub_firma ||--o{ sat_firma__karriere : hk_firma
     hub_firma ||--o{ sat_firma__theirstack : hk_firma

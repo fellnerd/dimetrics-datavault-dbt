@@ -20,7 +20,7 @@ WITH link_aktuell AS (
 
 firma_name AS (
     SELECT f.hk_firma, f.collision_code, f.firma_bk,
-           COALESCE(k.company_name, t.company_name)                                 AS firma_name_quelle,
+           COALESCE(k.company_name, t.company_name, fp.firma_name)                  AS firma_name_quelle,
            CASE f.collision_code WHEN 'karriere' THEN k.company_slug
                                  WHEN 'theirstack' THEN t.company_domain END        AS firma_code_quelle
     FROM {{ ref('hub_firma') }} f
@@ -28,6 +28,8 @@ firma_name AS (
         ON k.hk_firma = f.hk_firma AND k.dss_is_current = 'Y'
     LEFT JOIN {{ ref('sat_firma__theirstack') }} t
         ON t.hk_firma = f.hk_firma AND t.dss_is_current = 'Y'
+    LEFT JOIN {{ ref('sat_firma__firmenprofil') }} fp
+        ON fp.hk_firma = f.hk_firma AND fp.dss_is_current = 'Y'
 ),
 
 basis AS (

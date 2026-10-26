@@ -89,3 +89,7 @@ models:
   - name: sat_stelle_sichtung__freelancer
     description: "Sichtungs-Satellit, Quelle freelancer.at."
     columns: *sat_stelle_columns
+
+  - name: sat_firma__firmenprofil
+    description: "Firmenattribute aus dem Firmenprofil der Quelle (Name, Profil-URL, Website)."
+    columns: *sat_firma_columns

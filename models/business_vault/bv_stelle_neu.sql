@@ -48,7 +48,7 @@ SELECT
     h.stelle_bk,
     COALESCE(k.title, t.title, w.title, fl.title)                               AS titel,
     CASE WHEN f.firma_bk = '-1' THEN NULL
-         ELSE COALESCE(fk.company_name, ft.company_name, f.firma_bk) END AS firma,
+         ELSE COALESCE(fk.company_name, ft.company_name, ffp.firma_name, f.firma_bk) END AS firma,
     COALESCE(k.locations, t.location, fl.location)                                 AS ort,
     COALESCE(k.link, t.url, w.url, fl.url)                                    AS url,
     COALESCE(k.salary, fl.budget)                                     AS gehalt,
@@ -71,3 +71,4 @@ LEFT JOIN link_aktuell la ON la.hk_stelle = h.hk_stelle
 LEFT JOIN {{ ref('hub_firma') }} f ON f.hk_firma = la.hk_firma
 LEFT JOIN {{ ref('sat_firma__karriere') }} fk ON fk.hk_firma = f.hk_firma AND fk.dss_is_current = 'Y'
 LEFT JOIN {{ ref('sat_firma__theirstack') }} ft ON ft.hk_firma = f.hk_firma AND ft.dss_is_current = 'Y'
+LEFT JOIN {{ ref('sat_firma__firmenprofil') }} ffp ON ffp.hk_firma = f.hk_firma AND ffp.dss_is_current = 'Y'

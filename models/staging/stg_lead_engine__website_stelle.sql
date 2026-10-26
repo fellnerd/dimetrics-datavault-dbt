@@ -11,6 +11,7 @@
     Materialisierung: table (statt view), weil automate_dv.sat() die Quelle mehrfach liest (auch in einer korrelierten
     Unterabfrage je Zeile) und SQL Server eine View samt Hash-Berechnung sonst jedes Mal neu auswertet.
     Version: 2026-10-26 V1.2 als Tabelle materialisiert
+    Version: 2026-10-26 V1.4 hk_firma aus firma_quelle (karriere/theirstack/website) + firma_bk: Stellen haengen an bestehende hub_firma-Zeilen
     Version: 2026-10-26 V1.3 Delta: liest nur Laeufe, die der Vault noch nicht verarbeitet hat
 #}
 {{ config(
@@ -28,7 +29,7 @@ derived_columns:
   collision_code: "!website"
 hashed_columns:
   hk_stelle: [collision_code, stelle_bk]
-  hk_firma: [collision_code, firma_bk]
+  hk_firma: [firma_quelle, firma_bk]
   hk_link_stelle_firma: [collision_code, stelle_bk, firma_bk]
   hd_stelle__website:
     is_hashdiff: true

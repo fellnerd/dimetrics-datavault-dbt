@@ -22,5 +22,5 @@ Verarbeitung in dbt (inkrementell)
 - Base-Tabellen `base_lead_engine__*_stelle` übernehmen nur abgeschlossene Läufe (neueste Datei des Laufs ≥ 30 Min. alt) mit größerer `run_id`.
   Neue Leads erscheinen daher frühestens 30 Minuten nach Ende eines Collector-Laufs.
 - Das Laufprotokoll (`landing.lead_engine_lauf`) wird dafür nicht mehr verwendet: seit Collector 0.3.0 (Dagster) hat es eine andere `run_id` als die Dateien.
-- Quellen ohne Modell werden zwar geladen, aber nicht verarbeitet. Aktuell modelliert: karriere, theirstack, website, freelancer.
+- Quellen ohne Modell werden zwar geladen, aber nicht verarbeitet. Aktuell modelliert: karriere, theirstack, website, freelancer, firmenprofil (Firmenattribute an `hub_firma`).
 - Die Ruhezeit lässt sich überschreiben: `dbt run ... --vars '{lead_engine_ruhezeit_minuten: 0}'` (nur, wenn der Lauf sicher abgeschlossen ist).

@@ -6,6 +6,7 @@
     BK Stelle: Domain|normalisierter Titel (die Quelle hat keine Anzeigen-ID);
                ein geaenderter Titel ergibt eine neue Stelle.
     Version: 2026-10-25 V1.0 Initialversion
+    Version: 2026-10-26 V1.3 Firma aus karriere_company_id / theirstack_company_id (payload.company), sonst Domain
     Version: 2026-10-25 V1.1 profil_ids (Suchprofil, das die Stelle im Lauf gefunden hat)
     Version: 2026-10-26 V1.2 incremental: nur abgeschlossene Laeufe (Ruhezeit 30 Min.) mit run_id > bisherigem Maximum
 #}
@@ -18,6 +19,8 @@ with items as (
         coalesce(json_value(f.query_params, '$.profil_id'), 'data-bi') as profil_id,
         json_value(f.payload, '$.company.name')   as company_name,
         json_value(f.payload, '$.company.url')    as company_url,
+        json_value(f.payload, '$.company.karriere_company_id')   as karriere_company_id,
+        json_value(f.payload, '$.company.theirstack_company_id') as theirstack_company_id,
         j.title, j.url
     from {{ source('lead_engine', 'lead_engine_datei') }} f
     cross apply openjson(f.payload, '$.jobs') with (
@@ -72,7 +75,12 @@ select
     r.run_id,
     r.fetched_at,
     concat(coalesce(r.company_domain, '-1'), '|', r.title_norm) as stelle_bk,
-    coalesce(r.company_domain, '-1')                            as firma_bk,
+    -- Firma: bevorzugt die ID der bestehenden Firma aus karriere.at bzw. TheirStack (haengt die Stelle an dieselbe
+    -- hub_firma-Zeile), sonst wie bisher die Domain (Quelle website). firma_quelle ist der Kollisionscode der Firma.
+    case when r.karriere_company_id is not null then 'karriere'
+         when r.theirstack_company_id is not null then 'theirstack'
+         else 'website' end                                     as firma_quelle,
+    coalesce(r.karriere_company_id, r.theirstack_company_id, r.company_domain, '-1') as firma_bk,
     r.title, r.url,
     r.company_name,
     q.query_ids,

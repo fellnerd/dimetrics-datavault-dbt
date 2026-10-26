@@ -96,3 +96,15 @@ models:
     description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."
   - name: base_lead_engine__website_stelle_delta
     description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."
+
+  - name: stg_lead_engine__firmenprofil_firma
+    description: "Staging Firmenprofil (Lead-Engine): Firma je Lauf und Quelle der Firma (Kollisionscode = quelle). Speist hub_firma und sat_firma__firmenprofil."
+    columns:
+      - name: hk_firma
+        data_tests: [not_null]
+      - name: firma_bk
+        data_tests: [not_null]
+      - name: dss_business_key
+        data_tests: [not_null]
+  - name: base_lead_engine__firmenprofil
+    description: "Base-Tabelle (incremental): Firmenprofile (source firmenprofil), eine Zeile je Lauf, Quelle und company_id."
