@@ -18,7 +18,7 @@ import os
 import dlt
 from dlt.sources.filesystem import filesystem
 
-ENV_KEYS = ("schema", "collector_version", "source", "run_id", "fetched_at",
+ENV_KEYS = ("schema", "collector_version", "source", "run_id", "fetched_at", "profil_id",
             "query_id", "query_label", "page", "item_count")
 RUN_KEYS = ("schema", "collector_version", "run_id", "started_at", "finished_at")
 
@@ -48,6 +48,8 @@ def _json_text(value) -> str | None:
 @dlt.transformer(name="lead_engine_datei", write_disposition="append",
                  primary_key="file_path",
                  columns={"run_id": {"data_type": "text"},
+                          "profil_id": {"data_type": "text"},
+                          "profil_treffer": {"data_type": "text"},
                           "file_modified": {"data_type": "timestamp"},
                           "fetched_at": {"data_type": "timestamp"},
                           "page": {"data_type": "bigint"},
@@ -63,6 +65,8 @@ def lead_engine_datei(items):
                "total_reported": None if total is None else str(total),
                "query_params": _json_text(doc.get("query_params")),
                "request": _json_text(doc.get("request")),
+               # freelancer: {auftrags_id: [profil_id, ...]} – Stichwort-Treffer je Suchprofil
+               "profil_treffer": _json_text(doc.get("profil_treffer")),
                "payload": _json_text(doc.get("payload"))}
 
 
