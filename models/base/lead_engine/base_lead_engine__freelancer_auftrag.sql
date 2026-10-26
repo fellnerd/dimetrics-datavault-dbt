@@ -5,12 +5,13 @@
     Payload: $ (titel, beschreibung, kategorie_pfad, kategorie_slug, felder.*, anzahl_reaktionen)
     Die Auftrags-ID steht im Payload ($.auftrags_id), ersatzweise in query_params.
     Version: 2026-10-26 V1.0 Initialversion
+    Version: 2026-10-26 V1.1 profil_ids aus profil_treffer der Detaildatei
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
 with items as (
     select
-        f.run_id, f.query_id, f.fetched_at, f.file_path,
+        f.run_id, f.query_id, f.fetched_at, f.file_path, f.profil_treffer,
         coalesce(j.auftrags_id, json_value(f.query_params, '$.auftrags_id')) as auftrags_id,
         j.titel, j.url,
         j.beschreibung,   -- OPENJSON statt JSON_VALUE: JSON_VALUE liefert bei Texten ueber 4000 Zeichen NULL
@@ -59,6 +60,12 @@ select
     r.kategorie_slug, r.budget, r.ort, r.status,
     r.veroeffentlicht, r.zuletzt_geaendert,
     r.anzahl_reaktionen,
+    -- Profile der Detaildatei: profil_treffer ist {"<auftrags_id>": ["<profil>", ...]}, Join ueber den OPENJSON-Schluessel
+    (select string_agg(v.[value], ',') within group (order by v.[value])
+       from (select distinct pv.[value]
+               from openjson(case when isjson(r.profil_treffer) = 1 then r.profil_treffer else '{}' end) t
+               cross apply openjson(t.[value]) pv
+              where t.[key] collate database_default = r.auftrags_id) v)                                       as profil_ids,
     {{ lead_engine_freelancer_datum('r.veroeffentlicht', 'r.fetched_at') }}      as veroeffentlicht_am,
     {{ lead_engine_freelancer_datum('r.zuletzt_geaendert', 'r.fetched_at') }}    as zuletzt_geaendert_am
 from ranked r
