@@ -9,6 +9,7 @@
     Version: 2026-10-26 V1.3 Firma aus karriere_company_id / theirstack_company_id (payload.company), sonst Domain
     Version: 2026-10-25 V1.1 profil_ids (Suchprofil, das die Stelle im Lauf gefunden hat)
     Version: 2026-10-26 V1.2 incremental: nur abgeschlossene Laeufe (Ruhezeit 30 Min.) mit run_id > bisherigem Maximum
+    Version: 2026-10-26 Vollstaendigkeit ueber das Laufprotokoll + Anti-Join statt Ruhezeit (Macro lead_engine_lauf_filter)
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
@@ -28,14 +29,7 @@ with items as (
         url   nvarchar(1000) '$.url'
     ) j
     where f.source = 'website'
-      -- nur abgeschlossene Laeufe: neueste Datei des Laufs (alle Quellen) ist mindestens 30 Minuten alt.
-      -- (Das Laufprotokoll taugt nicht: seit Collector 0.3.0/Dagster hat es eine andere run_id als die Dateien.)
-      and f.run_id in (select run_id from {{ source('lead_engine', 'lead_engine_datei') }}
-                       group by run_id
-                       having max(fetched_at) < dateadd(minute, -{{ var('lead_engine_ruhezeit_minuten', 30) }}, sysdatetimeoffset()))
-      {% if is_incremental() %}
-      and f.run_id > coalesce((select max(run_id) from {{ this }}), '')
-      {% endif %}
+      {{ lead_engine_lauf_filter('f') }}
 ),
 
 normalized as (

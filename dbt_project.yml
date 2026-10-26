@@ -40,6 +40,11 @@ vars:
   #   <gruppen-prefix>-finance-ro: ['mart', 'mart_finance']
   ols_view_grants: {}
 
+  # Lead-Engine: manuell geprueft und freigegebene Laeufe OHNE Laufprotokoll (siehe macros/lead_engine_lauf_filter.sql)
+  lead_engine_freigegebene_laeufe:
+    - '20261025T223705Z'   # karriere, Collector 0.3.0, manuell erzeugt
+    - '20261026T092236Z'   # website + firmenprofil, manuell erzeugt
+
   # Hash algorithm: MD5 (16 byte) or SHA (32 byte)
   hash: 'SHA'
 

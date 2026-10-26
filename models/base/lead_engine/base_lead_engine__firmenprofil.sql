@@ -5,6 +5,7 @@
     Payload: $ (quelle, company_id, name, profil_url, website)
     firma_bk = company_id, quelle ist der Kollisionscode der Firma (gleicher hk_firma wie in den Quellen karriere/theirstack).
     Version: 2026-10-26 V1.0 Initialversion
+    Version: 2026-10-26 Vollstaendigkeit ueber das Laufprotokoll + Anti-Join statt Ruhezeit (Macro lead_engine_lauf_filter)
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
@@ -21,13 +22,7 @@ with items as (
         website      nvarchar(1000) '$.website'
     ) j
     where f.source = 'firmenprofil'
-      -- nur abgeschlossene Laeufe: neueste Datei des Laufs (alle Quellen) ist mindestens 30 Minuten alt.
-      and f.run_id in (select run_id from {{ source('lead_engine', 'lead_engine_datei') }}
-                       group by run_id
-                       having max(fetched_at) < dateadd(minute, -{{ var('lead_engine_ruhezeit_minuten', 30) }}, sysdatetimeoffset()))
-      {% if is_incremental() %}
-      and f.run_id > coalesce((select max(run_id) from {{ this }}), '')
-      {% endif %}
+      {{ lead_engine_lauf_filter('f') }}
 ),
 
 ranked as (
