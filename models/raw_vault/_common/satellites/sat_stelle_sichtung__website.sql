@@ -14,6 +14,7 @@
 -- depends_on: {{ ref('hub_firma') }}
 -- depends_on: {{ ref('link_stelle_firma') }}
 -- depends_on: {{ ref('sat_stelle__website') }}
+-- depends_on: {{ ref('sat_firma__website') }}
 {{ config(
     materialized='incremental',
     as_columnstore=false,

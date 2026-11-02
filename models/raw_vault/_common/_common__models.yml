@@ -118,3 +118,7 @@ models:
   - name: sat_stelle__freelancer_detail
     description: "freelancer.at: normalisierte Felder (payload.norm): Veröffentlichung, Änderung, Reaktionen, remote, Ort, Land, Budget min/max/Einheit."
     columns: *sat_stelle_columns
+
+  - name: sat_firma__website
+    description: "Firmenname aus payload.company.name der Website-Datei (ersetzt 'UNKNOWN' bei Domain-Firmen)."
+    columns: *sat_firma_columns

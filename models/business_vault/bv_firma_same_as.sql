@@ -7,7 +7,7 @@
            Namen aber eine Domain, uebernimmt sie diese Domain (abgleich_regel 'name>domain').
     Grain: 1 Zeile je hk_firma (ohne firma_bk '-1').
     Ausgabe: master_firma_bk ('d:<domain>' | 'n:<name>' | '<quelle>:<bk>'), abgleich_regel (domain, name>domain, name, keine).
-    Quellen: hub_firma, sat_firma__karriere, __theirstack, __firmenprofil, __adzuna (jeweils aktueller Stand)
+    Quellen: hub_firma, sat_firma__karriere, __theirstack, __firmenprofil, __adzuna, __website (jeweils aktueller Stand)
     Version: 2026-10-26 V1.0 Initialversion (ohne FN)
 #}
 {{ config(materialized='view', tags=['business_vault']) }}
@@ -15,7 +15,7 @@
 with f as (
     select
         h.hk_firma, h.collision_code, h.firma_bk,
-        coalesce(k.company_name, t.company_name, fp.firma_name, ad.firma_name)           as firma_name,
+        coalesce(k.company_name, t.company_name, fp.firma_name, ad.firma_name, wf.firma_name) as firma_name,
         coalesce({{ lead_engine_domain('t.company_domain') }},
                  {{ lead_engine_domain('fp.website_url') }},
                  case when h.collision_code = 'website' and h.firma_bk <> '-1' then lower(h.firma_bk) end) as domain
@@ -24,6 +24,7 @@ with f as (
     left join {{ ref('sat_firma__theirstack') }} t on t.hk_firma = h.hk_firma  and t.dss_is_current = 'Y'
     left join {{ ref('sat_firma__firmenprofil') }} fp on fp.hk_firma = h.hk_firma and fp.dss_is_current = 'Y'
     left join {{ ref('sat_firma__adzuna') }} ad    on ad.hk_firma = h.hk_firma and ad.dss_is_current = 'Y'
+    left join {{ ref('sat_firma__website') }} wf   on wf.hk_firma = h.hk_firma and wf.dss_is_current = 'Y'
     where h.firma_bk <> '-1'
 ),
 

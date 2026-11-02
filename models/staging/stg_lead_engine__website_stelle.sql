@@ -34,6 +34,9 @@ hashed_columns:
   hd_stelle__website:
     is_hashdiff: true
     columns: [title, url]
+  hd_firma__website:
+    is_hashdiff: true
+    columns: [company_name]
   hd_stelle_sichtung__website:
     is_hashdiff: true
     columns: [run_id, query_ids, profil_ids]
