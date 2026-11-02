@@ -137,3 +137,10 @@ models:
               config: {severity: warn}
       - name: hashdiff
         data_tests: [not_null]
+
+  - name: sat_stelle__ted
+    description: "TED-Bekanntmachung: Titel, Art, Auftraggeber (Name, Ort), Veröffentlichung, Frist, Beschreibung, Ausführungsort, CPV, URL."
+    columns: *sat_stelle_columns
+  - name: sat_stelle_sichtung__ted
+    description: "Sichtungs-Satellit, Quelle TED (jede Bekanntmachung wird in jedem Lauf erneut gelistet)."
+    columns: *sat_stelle_columns

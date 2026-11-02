@@ -2,9 +2,9 @@
     Business Vault (virtuell): bv_gelegenheit_score
     Grain: 1 Zeile je Cluster (bv_stelle_cluster, Repraesentant) = eine Gelegenheit. Alle Bausteine einzeln, Punkte aus ref_lead_engine__gewicht
            (Seed-Startwerte, ueberschrieben durch die Gewichte aus der Landing-Quelle suchprofil).
-    Lead-Typen: A1 freelancer.at | A2 Vermittler mit Vertragsart freiberuflich/projekt/befristet, karriere Projektarbeit, TheirStack __projekte |
+    Lead-Typen: A1 freelancer.at | A3 TED-Ausschreibung | A2 Vermittler mit Vertragsart freiberuflich/projekt/befristet, karriere Projektarbeit, TheirStack __projekte |
                 C Partner (IT-Dienstleister/Beratung mit Themen-Treffer) | B1 Firmenstelle im Thema mit Interim/Karenz/Elternzeit/befristet,
-                > 45 Tage online oder neu ausgeschrieben | B2 sonst. A3 (TED) folgt mit Phase B.
+                > 45 Tage online oder neu ausgeschrieben | B2 sonst.
     ist_konzern: Mitarbeiter > Schwelle, Konzernhinweis oder fremde Jobdomain aus dem Impressum.
     Ausgeschlossen (bleibt mit Kennzeichen in der Tabelle): Festanstellung ueber Vermittler. Lead-Status und Sperrliste folgen mit Phase B.
     Negativbegriff im Titel: Typ- und Region-Punkte entfallen (zusaetzlich zum Abzug).
@@ -74,6 +74,7 @@ basis as (
            coalesce(ts.roh, 0) as thema_roh, coalesce(ts.kern_im_titel, 0) as kern_im_titel, ts.themen,
            case when ng.cluster_key is not null then 1 else 0 end as negativ_titel,
            case when r.quelle = 'freelancer' then 'A1'
+                when r.quelle = 'ted' then 'A3'
                 when r.ist_vermittler = 1 and r.vertragsart in ('freiberuflich', 'projekt', 'befristet') then 'A2'
                 when r.aus_projektarbeit = 1 or r.aus_projekte_suche = 1 then 'A2'
                 when r.ist_vermittler = 1 then null

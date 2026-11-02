@@ -5,7 +5,7 @@
     Laeufe ohne Protokoll sind teils gewollt (lead_engine_freigegebene_laeufe). Nur Dateien mit Treffern zaehlen. -#}
 {%- set quellen = [('karriere', 'sat_stelle_sichtung__karriere'), ('theirstack', 'sat_stelle_sichtung__theirstack'),
                    ('website', 'sat_stelle_sichtung__website'), ('freelancer', 'sat_stelle_sichtung__freelancer'),
-                   ('adzuna', 'sat_stelle_sichtung__adzuna')] -%}
+                   ('adzuna', 'sat_stelle_sichtung__adzuna'), ('ted', 'sat_stelle_sichtung__ted')] -%}
 {% for quelle, sat in quellen %}
 select '{{ quelle }}' as quelle, d.run_id, count(*) as dateien
 from {{ source('lead_engine', 'lead_engine_datei') }} d

@@ -1,7 +1,7 @@
 {#
     Mart: fakt_stelle
     Grain: 1 Zeile je Stelle und Quelle (Lebenszyklus der Anzeige aus den Sichtungen).
-    Quellen: sat_stelle_sichtung__{karriere,theirstack,website,freelancer,adzuna}, hub_stelle,
+    Quellen: sat_stelle_sichtung__{karriere,theirstack,website,freelancer,adzuna,ted}, hub_stelle,
              link_stelle_firma (juengste Zuordnung), hub_firma
     datum_key = Datum der ersten Sichtung; zuletzt_gesehen_datum_key = Datum der letzten Sichtung.
     ist_online = 1, wenn die Stelle im juengsten Lauf ihrer Quelle noch gefunden wurde. Fuer Adzuna NULL (die Quelle liefert
@@ -24,6 +24,9 @@ WITH sichtung AS (
     UNION ALL
     SELECT hk_stelle, run_id, dss_load_date
     FROM {{ ref('sat_stelle_sichtung__adzuna') }}
+    UNION ALL
+    SELECT hk_stelle, run_id, dss_load_date
+    FROM {{ ref('sat_stelle_sichtung__ted') }}
 ),
 
 je_stelle AS (

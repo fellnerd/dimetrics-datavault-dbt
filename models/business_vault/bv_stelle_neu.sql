@@ -20,6 +20,9 @@ WITH sichtung AS (
     UNION ALL
     SELECT hk_stelle, run_id, query_ids, dss_load_date
     FROM {{ ref('sat_stelle_sichtung__adzuna') }}
+    UNION ALL
+    SELECT hk_stelle, run_id, query_ids, dss_load_date
+    FROM {{ ref('sat_stelle_sichtung__ted') }}
 ),
 
 erster_lauf AS (
@@ -49,15 +52,15 @@ SELECT
     h.hk_stelle,
     h.collision_code                                                  AS quelle,
     h.stelle_bk,
-    COALESCE(k.title, t.title, w.title, fl.title, az.title)                               AS titel,
+    COALESCE(k.title, t.title, w.title, fl.title, az.title, te.titel)                               AS titel,
     CASE WHEN f.firma_bk = '-1' THEN NULL
          ELSE COALESCE(fk.company_name, ft.company_name, ffp.firma_name, fad.firma_name, fwf.firma_name, f.firma_bk) END AS firma,
-    COALESCE(k.locations, t.location, fl.location, az.location_name)                                 AS ort,
-    COALESCE(k.link, t.url, w.url, fl.url, az.url)                                    AS url,
+    COALESCE(k.locations, t.location, fl.location, az.location_name, te.buyer_city)                                 AS ort,
+    COALESCE(k.link, t.url, w.url, fl.url, az.url, te.url)                                    AS url,
     COALESCE(k.salary, fl.budget,
              CASE WHEN az.salary_min IS NOT NULL THEN CONCAT(CAST(CAST(az.salary_min AS INT) AS NVARCHAR(20)), ' - ', CAST(CAST(az.salary_max AS INT) AS NVARCHAR(20))) END)                                     AS gehalt,
     t.seniority                                                       AS seniority,
-    COALESCE(k.posted_date, t.date_posted, fl.veroeffentlicht_am, az.created_am)                            AS veroeffentlicht_am,
+    COALESCE(k.posted_date, t.date_posted, fl.veroeffentlicht_am, az.created_am, te.publication_date)                            AS veroeffentlicht_am,
     e.erstmals_gesehen,
     e.run_id,
     sc.query_ids,
@@ -72,6 +75,7 @@ LEFT JOIN {{ ref('sat_stelle__theirstack') }} t ON t.hk_stelle = h.hk_stelle AND
 LEFT JOIN {{ ref('sat_stelle__website') }} w ON w.hk_stelle = h.hk_stelle AND w.dss_is_current = 'Y'
 LEFT JOIN {{ ref('sat_stelle__freelancer') }} fl ON fl.hk_stelle = h.hk_stelle AND fl.dss_is_current = 'Y'
 LEFT JOIN {{ ref('sat_stelle__adzuna') }} az ON az.hk_stelle = h.hk_stelle AND az.dss_is_current = 'Y'
+LEFT JOIN {{ ref('sat_stelle__ted') }} te ON te.hk_stelle = h.hk_stelle AND te.dss_is_current = 'Y'
 LEFT JOIN link_aktuell la ON la.hk_stelle = h.hk_stelle
 LEFT JOIN {{ ref('hub_firma') }} f ON f.hk_firma = la.hk_firma
 LEFT JOIN {{ ref('sat_firma__karriere') }} fk ON fk.hk_firma = f.hk_firma AND fk.dss_is_current = 'Y'

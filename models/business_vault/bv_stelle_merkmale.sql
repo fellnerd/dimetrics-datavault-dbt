@@ -7,7 +7,8 @@
     ist_online: Stelle im juengsten Lauf ihrer Quelle noch gesehen; NULL fuer Adzuna (jede Anzeige nur einmal, Delta).
     Region: Ort -> Bundesland ueber ref_lead_engine__ort_name (PLZ folgt, sobald vorhanden); region_gruppe passt zu den
             Schluesseln im Bereich 'region' der Gewichte (Kärnten, Steiermark, ..., Osttirol, Tirol (= Nordtirol), DACH, unbekannt).
-    Nicht enthalten (Phase B): Website-Detailtexte, Lead-Status, Firmenbuch, TED.
+    TED: Auftraggeber (buyer_name) als firma_name, kein Firmen-Link; Vertragsart 'projekt'.
+    Nicht enthalten (Phase B): Website-Detailtexte, Lead-Status, Firmenbuch.
     Materialisierung: Tabelle statt View (Business Vault sonst virtuell): die Berechnung (viele Satelliten, Textnormalisierung) wird von
     bv_stelle_thema, bv_stelle_cluster und bv_gelegenheit_score mehrfach gebraucht und waere als View je Abfrage zu teuer.
     Version: 2026-10-26 V1.0 Erste Fassung
@@ -20,6 +21,7 @@ with sichtung as (
     union all select hk_stelle, run_id, query_ids, dss_load_date, 'website' from {{ ref('sat_stelle_sichtung__website') }}
     union all select hk_stelle, run_id, query_ids, dss_load_date, 'freelancer' from {{ ref('sat_stelle_sichtung__freelancer') }}
     union all select hk_stelle, run_id, query_ids, dss_load_date, 'adzuna' from {{ ref('sat_stelle_sichtung__adzuna') }}
+    union all select hk_stelle, run_id, query_ids, dss_load_date, 'ted' from {{ ref('sat_stelle_sichtung__ted') }}
 ),
 
 sicht as (
@@ -50,39 +52,42 @@ link_aktuell as (
 basis as (
     select
         h.hk_stelle, h.collision_code as quelle, h.stelle_bk,
-        coalesce(k.title, t.title, w.title, fl.title, az.title)                         as titel,
-        coalesce(k.link, t.url, w.url, fl.url, az.url)                                  as url,
+        coalesce(k.title, t.title, w.title, fl.title, az.title, te.titel)               as titel,
+        coalesce(k.link, t.url, w.url, fl.url, az.url, te.url)                        as url,
         case when kd.beschreibung is not null and kd.beschreibung <> '' then kd.beschreibung
              when td.description is not null and td.description <> ''  then td.description
+             when te.description is not null and te.description <> ''   then te.description
              when fl.beschreibung is not null and fl.beschreibung <> '' then fl.beschreibung
              when az.description is not null and az.description <> ''   then az.description
              else kt.summary end                                                        as text,
         case when kd.beschreibung is not null and kd.beschreibung <> '' then 'karriere_detail'
              when td.description is not null and td.description <> ''  then 'theirstack'
+             when te.description is not null and te.description <> ''   then 'ted'
              when fl.beschreibung is not null and fl.beschreibung <> '' then 'freelancer'
              when az.description is not null and az.description <> ''   then 'adzuna'
              when kt.summary is not null and kt.summary <> ''           then 'karriere_summary' end as text_quelle,
-        coalesce(kd.veroeffentlicht_am, k.posted_date, t.date_posted, fd.norm_veroeffentlicht_am, fl.veroeffentlicht_am, az.created_am) as veroeffentlicht_roh,
+        coalesce(kd.veroeffentlicht_am, k.posted_date, t.date_posted, fd.norm_veroeffentlicht_am, fl.veroeffentlicht_am, az.created_am, te.publication_date) as veroeffentlicht_roh,
         s.erste_sichtung, s.letzte_sichtung,
         td.reposted                                                                     as ist_reposted,
         case when h.collision_code = 'adzuna' then null
              when s.letzter_run_id = lq.run_id then 1 else 0 end                        as ist_online,
         lower(concat_ws(' ', k.employment_types, kd.employment_type, td.employment_statuses, az.contract_type, az.contract_time,
-                        case when h.collision_code = 'freelancer' then 'freiberuflich' end)) as vertrag_roh,
+                        case when h.collision_code = 'freelancer' then 'freiberuflich' end,
+                        case when h.collision_code = 'ted' then 'projekt' end)) as vertrag_roh,
         coalesce(t.is_remote, fd.norm_ist_remote,
                  case when lower(fl.location) like '%ferne%' or lower(coalesce(k.title, t.title, w.title, fl.title, az.title)) like '%remote%' then 1 end) as ist_remote_roh,
         coalesce(t.is_hybrid, k.is_home_office,
                  case when lower(coalesce(k.title, t.title, w.title, fl.title, az.title)) like '%hybrid%' then 1 end) as ist_hybrid_roh,
         coalesce(nullif(fd.norm_ort, ''), nullif(az.location_name, ''), nullif(kd.orte_text, ''), nullif(k.locations, ''), nullif(td.short_location, ''),
-                 nullif(t.location, ''), nullif(fl.location, ''))                       as ort_roh,
+                 nullif(t.location, ''), nullif(fl.location, ''), nullif(te.buyer_city, ''))                       as ort_roh,
         concat_ws(' ', az.location_area, kd.region)                                     as location_area,
         kd.plz                                                                          as plz_roh,
-        coalesce(fd.norm_land, td.country_code, kd.land)                                as land_roh,
+        coalesce(fd.norm_land, td.country_code, kd.land, case when te.place like '%AUT%' then 'AT' end) as land_roh,
         coalesce(k.salary, fl.budget,
                  case when az.salary_min is not null then concat(cast(cast(az.salary_min as int) as nvarchar(20)), ' - ', cast(cast(az.salary_max as int) as nvarchar(20))) end) as budget_text,
         case when fd.norm_budget_einheit = 'stunde' then fd.norm_budget_min end         as stundensatz_min,
         fd.norm_reaktionen                                                              as reaktionen,
-        s.aus_projektarbeit, s.aus_projekte_suche,
+        s.aus_projektarbeit, s.aus_projekte_suche, te.buyer_name,
         la.hk_firma
     from {{ ref('hub_stelle') }} h
     left join sicht s on s.hk_stelle = h.hk_stelle
@@ -96,6 +101,7 @@ basis as (
     left join {{ ref('sat_stelle__freelancer') }} fl       on fl.hk_stelle = h.hk_stelle and fl.dss_is_current = 'Y'
     left join {{ ref('sat_stelle__freelancer_detail') }} fd on fd.hk_stelle = h.hk_stelle and fd.dss_is_current = 'Y'
     left join {{ ref('sat_stelle__adzuna') }} az           on az.hk_stelle = h.hk_stelle and az.dss_is_current = 'Y'
+    left join {{ ref('sat_stelle__ted') }} te              on te.hk_stelle = h.hk_stelle and te.dss_is_current = 'Y'
     left join link_aktuell la on la.hk_stelle = h.hk_stelle
 ),
 
@@ -167,7 +173,7 @@ select
          when r.bundesland in ('Oberösterreich', 'Niederösterreich', 'Wien', 'Burgenland', 'Vorarlberg') then r.bundesland
          when coalesce(r.land_roh, '') in ('DE', 'CH', 'LI') then 'DACH'
          else 'unbekannt' end                                                           as region_gruppe,
-    fm.master_firma_bk, fm.firma_name,
+    fm.master_firma_bk, coalesce(fm.firma_name, r.buyer_name) as firma_name,
     cast(coalesce(fa.ist_vermittler, 0) as int)                                         as ist_vermittler,
     fa.mitarbeiter, fa.branche, fa.technologien, fa.konzern_hinweis, fa.fremde_jobdomain,
     r.budget_text, r.stundensatz_min, r.reaktionen,

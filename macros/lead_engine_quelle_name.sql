@@ -8,6 +8,7 @@ CASE {{ collision_code }}
     WHEN 'website'    THEN N'Firmenwebsite'
     WHEN 'freelancer' THEN N'freelancer.at'
     WHEN 'adzuna'     THEN N'Adzuna'
+    WHEN 'ted'        THEN N'TED'
     ELSE CAST({{ collision_code }} AS NVARCHAR(255))
 END
 {%- endmacro %}

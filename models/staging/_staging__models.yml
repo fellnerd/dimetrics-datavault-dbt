@@ -140,3 +140,19 @@ models:
     description: "Base-Tabelle (incremental): karriere.at-Detailseiten je Lauf und Job-ID mit voller Beschreibung."
   - name: base_lead_engine__karriere_detail_delta
     description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."
+
+  - name: stg_lead_engine__ted_stelle
+    description: "Staging TED (Lead-Engine): Bekanntmachung je Lauf (Delta). BK Stelle = publication-number, kein Firmen-Hub (nur Auftraggeber-Name als Attribut)."
+    columns:
+      - name: hk_stelle
+        data_tests: [not_null]
+      - name: stelle_bk
+        data_tests: [not_null]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [run_id, stelle_bk]
+  - name: base_lead_engine__ted_stelle
+    description: "Base-Tabelle (incremental): TED-Bekanntmachungen aus payload.notices, je Lauf und publication-number."
+  - name: base_lead_engine__ted_stelle_delta
+    description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."
