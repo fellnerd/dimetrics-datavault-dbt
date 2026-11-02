@@ -1,6 +1,7 @@
 {#
     Business Vault (virtuell): bv_stelle_thema
     Grain: je Stelle x Thema x Begriff mit Treffer. fundort 'titel' (Treffer im Titel, hat Vorrang) oder 'text'.
+    Zusammenschreibung: Begriffe mit Leerzeichen (zusammengeschrieben ab 7 Zeichen) treffen im Titel auch zusammengeschrieben ("power bi" = "PowerBI").
     Treffer-Regeln (wie im Collector, relevanz.py): gross/klein egal; Leerzeichen und Bindestrich gleichwertig; Begriffe ab 6 Zeichen
     auch als Teil eines Kompositums (keine linke Wortgrenze, z. B. "Finanzcontroller"), kuerzere nur als eigenes Wort; deutsche
     Endungen (in, innen, en, n, s, e, er, ern) erlaubt. Begriffe mit nur_titel und das Thema 'Negativ' zaehlen nur im Titel.
@@ -34,16 +35,30 @@ kandidat as (   -- grober Vorfilter: Begriff kommt irgendwo vor
     from s cross join t
     where charindex(t.begriff, s.titel_n) > 0
        or (t.nur_titel = 0 and charindex(t.begriff, s.text_n) > 0)
+),
+
+direkt as (
+    select k.hk_stelle, k.thema, cast(k.begriff as nvarchar(200)) collate database_default as begriff, k.gewicht,
+           case when exists (select 1 from endung en
+                              where k.im_titel = 1
+                                and charindex(case when k.laenge >= 6 then '' else ' ' end + k.begriff + en.e + ' ', k.titel_n) > 0) then 'titel'
+                else 'text' end as fundort
+    from kandidat k
+    where exists (select 1 from endung en
+                   where (k.im_titel = 1
+                          and charindex(case when k.laenge >= 6 then '' else ' ' end + k.begriff + en.e + ' ', k.titel_n) > 0)
+                      or (k.im_text = 1
+                          and charindex(case when k.laenge >= 6 then '' else ' ' end + k.begriff + en.e + ' ', k.text_n) > 0))
+),
+
+zusammen as (   -- Zusammenschreibung im Titel: "power bi" trifft auch "PowerBI" (Begriffe mit Leerzeichen, zusammengeschrieben ab 7 Zeichen)
+    select s.hk_stelle, t.thema, cast(t.begriff as nvarchar(200)) collate database_default as begriff, t.gewicht, 'titel' as fundort
+    from s cross join t
+    where t.begriff like '% %'
+      and len(replace(t.begriff, ' ', '')) >= 7
+      and charindex(replace(t.begriff, ' ', ''), replace(s.titel_n, ' ', '')) > 0   -- ohne Wortgrenze: Zusammenschreibung ist ein Kompositum
 )
 
-select k.hk_stelle, k.thema, cast(k.begriff as nvarchar(200)) collate database_default as begriff, k.gewicht,
-       case when exists (select 1 from endung en
-                          where k.im_titel = 1
-                            and charindex(case when k.laenge >= 6 then '' else ' ' end + k.begriff + en.e + ' ', k.titel_n) > 0) then 'titel'
-            else 'text' end as fundort
-from kandidat k
-where exists (select 1 from endung en
-               where (k.im_titel = 1
-                      and charindex(case when k.laenge >= 6 then '' else ' ' end + k.begriff + en.e + ' ', k.titel_n) > 0)
-                  or (k.im_text = 1
-                      and charindex(case when k.laenge >= 6 then '' else ' ' end + k.begriff + en.e + ' ', k.text_n) > 0))
+select hk_stelle, thema, begriff, gewicht, fundort from direkt
+union
+select hk_stelle, thema, begriff, gewicht, fundort from zusammen

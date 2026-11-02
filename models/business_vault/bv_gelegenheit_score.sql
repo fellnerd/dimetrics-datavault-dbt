@@ -7,7 +7,8 @@
                 > 45 Tage online oder neu ausgeschrieben | B2 sonst.
     ist_konzern: Mitarbeiter > Schwelle, Konzernhinweis oder fremde Jobdomain aus dem Impressum.
     Ausgeschlossen (bleibt mit Kennzeichen in der Tabelle): Festanstellung ueber Vermittler. Lead-Status und Sperrliste folgen mit Phase B.
-    Negativbegriff im Titel: Typ- und Region-Punkte entfallen (zusaetzlich zum Abzug).
+    Typ- und Region-Punkte gibt es nur, wenn ein Kernthema (Datenplattform, BI und Reporting, KI, Controlling) im Titel trifft; ein
+    Negativbegriff im Titel nimmt sie ebenfalls (zusaetzlich zum Abzug).
     Hybrid-Bonus: wenn hybrid und die Region unter 10 Punkten liegt (Gewichte-Blatt).
     Bausteine: p_thema (0-35), p_typ, p_region (0-20), p_frische (0-15), p_passung (0-5), p_bonus (bis +15), p_abzug (bis -25); vorscore = Summe.
     Materialisierung: Tabelle (statt View): lead_gelegenheiten_v und lead_firmen_v lesen sie mehrfach, als View waere jede Abfrage zu teuer.
@@ -51,8 +52,8 @@ punkte as (
            cast(case when b.kern_im_titel = 1 then case when b.thema_roh > p.thema_deckel then p.thema_deckel else b.thema_roh end
                      else case when b.thema_roh > p.ohne_kern_max then p.ohne_kern_max else b.thema_roh end end as int) as p_thema,
            -- Negativbegriff im Titel: Typ- und Region-Punkte entfallen (der Abzug bleibt)
-           cast(case when b.negativ_titel = 1 then 0 else (select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'typ' and g.schluessel = b.lead_typ) end as int) as p_typ,
-           cast(case when b.negativ_titel = 1 then 0 when b.ist_remote = 1 then (select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = 'remote')
+           cast(case when b.negativ_titel = 1 or b.kern_im_titel = 0 then 0 else (select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'typ' and g.schluessel = b.lead_typ) end as int) as p_typ,
+           cast(case when b.negativ_titel = 1 or b.kern_im_titel = 0 then 0 when b.ist_remote = 1 then (select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = 'remote')
                      else coalesce((select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = b.region_gruppe), 0)
                           + case when b.ist_hybrid = 1 and coalesce((select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = b.region_gruppe), 0) < 10 then p.r_hybrid else 0 end
                 end as int) as p_region,
