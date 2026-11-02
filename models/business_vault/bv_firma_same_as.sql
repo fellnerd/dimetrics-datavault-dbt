@@ -2,7 +2,7 @@
     Business Vault (virtuell): bv_firma_same_as
     Zweck: jeder Firma (hub_firma, je Quelle getrennt) einen Master zuordnen, damit dieselbe Firma aus karriere, TheirStack,
            website, Firmenprofil und Adzuna zusammenfindet.
-    Reihenfolge der Regeln: FN (Impressum; Firmenbuch folgt) -> Domain ohne www. -> normalisierter Name
+    Reihenfolge der Regeln: FN (Impressum, Firmenbuch) -> Domain ohne www. -> normalisierter Name
            (klein, Rechtsformen und Sonderzeichen entfernt). Hat eine Firma nur einen Namen, ein anderer Eintrag mit demselben
            Namen aber eine Domain, uebernimmt sie diese Domain (abgleich_regel 'name>domain').
     Grain: 1 Zeile je hk_firma (ohne firma_bk '-1').
@@ -11,6 +11,7 @@
     Quellen: hub_firma, sat_firma__karriere, __theirstack, __firmenprofil, __adzuna, __website (jeweils aktueller Stand)
     Version: 2026-10-26 V1.0 Initialversion (ohne FN)
     Version: 2026-11-02 V1.1 FN aus sat_firma__impressum
+    Version: 2026-11-02 V1.2 FN auch aus sat_firma__firmenbuch, einheitlich normalisiert (Macro lead_engine_fn_norm)
 #}
 {{ config(materialized='view', tags=['business_vault']) }}
 
@@ -21,7 +22,7 @@ with f as (
         coalesce({{ lead_engine_domain('t.company_domain') }},
                  {{ lead_engine_domain('fp.website_url') }},
                  case when h.collision_code = 'website' and h.firma_bk <> '-1' then lower(h.firma_bk) end) as domain,
-        nullif(lower(replace(replace(replace(imp.fn, ' ', ''), '-', ''), 'fn', '')), '') as fn
+        coalesce({{ lead_engine_fn_norm('imp.fn') }}, fb.fn) as fn
     from {{ ref('hub_firma') }} h
     left join {{ ref('sat_firma__karriere') }} k   on k.hk_firma = h.hk_firma  and k.dss_is_current = 'Y'
     left join {{ ref('sat_firma__theirstack') }} t on t.hk_firma = h.hk_firma  and t.dss_is_current = 'Y'
@@ -29,6 +30,7 @@ with f as (
     left join {{ ref('sat_firma__adzuna') }} ad    on ad.hk_firma = h.hk_firma and ad.dss_is_current = 'Y'
     left join {{ ref('sat_firma__website') }} wf   on wf.hk_firma = h.hk_firma and wf.dss_is_current = 'Y'
     left join {{ ref('sat_firma__impressum') }} imp on imp.hk_firma = h.hk_firma and imp.dss_is_current = 'Y'
+    left join {{ ref('sat_firma__firmenbuch') }} fb on fb.hk_firma = h.hk_firma and fb.dss_is_current = 'Y'
     where h.firma_bk <> '-1'
 ),
 

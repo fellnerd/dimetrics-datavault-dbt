@@ -6,7 +6,8 @@
     Zweck: Firmenblick auf die Gelegenheiten: bester Vorscore, Zahl der Gelegenheiten (ab Vorscore 40), Themen, Region, Groesse, Konzern,
            Technologien. Ersetzt nach Umstellung des Skills lead_kandidaten_v.
     Schluessel: firma_id (varchar, Hash des Masters) statt bigint (das MCP-Blaettern scheitert an grossen bigint-Schluesseln).
-    Offen: firmenbuch_ereignisse (Phase B b, wartet auf die Firmenbuch-Daten), status/status_am (Lead-Status, Phase B f).
+    Firmenbuch: fn, rechtsform, firmenbuch_sitz und firmenbuch_ereignisse (juengste Veraenderung im Firmenbuch) aus sat_firma__firmenbuch(_ereignis).
+    Offen: Funktionstraeger (die Quelle liefert keinen Auszug).
     Quellen: bv_gelegenheit_score, bv_stelle_cluster, bv_stelle_thema
     Version: 2026-11-02 V1.0 Erste Fassung
 #}
@@ -59,6 +60,18 @@ regionen as (
     group by x.master_firma_bk
 ),
 
+firmenbuch as (   -- FN, Rechtsform, Sitz und juengstes Firmenbuch-Signal je Master (ueber alle Firmen des Masters)
+    select f.master_firma_bk,
+           min(fb.fn) as fn, min(fb.rechtsform) as rechtsform, min(fb.sitz) as sitz,
+           max(ev.letzte_veraenderung_am) as letzte_veraenderung_am,
+           max(case when ev.letzte_veraenderung_am is not null then concat(ev.letzte_art, ' am ', convert(varchar(10), ev.letzte_veraenderung_am, 23), ' (', ev.anzahl_veraenderungen, ' im Zeitraum ', ev.zeitraum_von, ' bis ', ev.zeitraum_bis, ')') end) as ereignis_text
+    from {{ ref('bv_firma_same_as') }} f
+    left join {{ ref('sat_firma__firmenbuch') }} fb on fb.hk_firma = f.hk_firma and fb.dss_is_current = 'Y'
+    left join {{ ref('sat_firma__firmenbuch_ereignis') }} ev on ev.hk_firma = f.hk_firma and ev.dss_is_current = 'Y'
+    where f.master_firma_bk in (select master_firma_bk from je_firma)
+    group by f.master_firma_bk
+),
+
 titel as (   -- die besten Gelegenheiten der Firma als Text
     select x.master_firma_bk,
            left(string_agg(cast(concat(x.titel, ' [', x.lead_typ, ' ', x.vorscore, ']') as nvarchar(max)), ' | ')
@@ -82,10 +95,11 @@ select
          else 'ueber 2500' end                                                      as groesse,
     b.mitarbeiter, jf.ist_konzern, jf.ist_vermittler,
     b.branche, b.technologien,
+    fbk.fn, fbk.rechtsform, fbk.sitz                                                as firmenbuch_sitz,
     q.quellen,
     jf.erste_sichtung, jf.letzte_sichtung,
     t.gelegenheiten                                                                 as beste_gelegenheiten,
-    cast(null as nvarchar(1000))                                                    as firmenbuch_ereignisse,
+    fbk.ereignis_text                                                               as firmenbuch_ereignisse,
     (select top 1 s2.status from {{ ref('ref_lead_engine__lead_status') }} s2
       where s2.firma_norm <> '' and s2.firma_norm = (select top 1 f.name_norm from {{ ref('bv_firma_same_as') }} f where f.master_firma_bk = b.master_firma_bk and f.name_norm <> '')
       order by s2.datum desc)                                                       as status,
@@ -98,4 +112,5 @@ left join themen th on th.master_firma_bk = b.master_firma_bk
 left join quellen q on q.master_firma_bk = b.master_firma_bk
 left join regionen rg on rg.master_firma_bk = b.master_firma_bk
 left join titel t on t.master_firma_bk = b.master_firma_bk
+left join firmenbuch fbk on fbk.master_firma_bk = b.master_firma_bk
 where b.rn = 1

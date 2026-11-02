@@ -144,3 +144,10 @@ models:
   - name: sat_stelle_sichtung__ted
     description: "Sichtungs-Satellit, Quelle TED (jede Bekanntmachung wird in jedem Lauf erneut gelistet)."
     columns: *sat_stelle_columns
+
+  - name: sat_firma__firmenbuch
+    description: "Firmenbuch (nur sichere Zuordnungen): Firmenbuchnummer (normalisiert), Name, Sitz, Rechtsform, Gericht, Status."
+    columns: *sat_firma_columns
+  - name: sat_firma__firmenbuch_ereignis
+    description: "Signal-Satellit: Veränderungen im Firmenbuch je Firma und Zeitraum (Anzahl, jüngstes Datum, jüngste Art, Arten)."
+    columns: *sat_firma_columns

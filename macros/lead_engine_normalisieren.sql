@@ -45,3 +45,10 @@ nullif(lower(case when charindex('/', replace(replace(replace({{ url }}, 'https:
 {%- for i in range(5) -%}{%- set ns.e = "replace(" ~ ns.e ~ ", '  ', ' ')" -%}{%- endfor -%}
 {{ ns.e }}
 {%- endmacro %}
+
+{% macro lead_engine_fn_norm(spalte) %}
+{#- Firmenbuchnummer normalisiert: klein, ohne Leerzeichen/Bindestrich/Praefix "fn", ohne fuehrende Nullen ("088983 h" = "88983h").
+    Verwendung: {{ lead_engine_fn_norm('imp.fn') }} -#}
+{%- set v = "lower(replace(replace(replace(" ~ spalte ~ ", ' ', ''), '-', ''), 'fn', ''))" -%}
+nullif(substring({{ v }}, patindex('%[^0]%', {{ v }} + 'x'), 30), '')
+{%- endmacro %}

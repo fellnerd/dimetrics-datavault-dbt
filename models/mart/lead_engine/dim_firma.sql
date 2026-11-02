@@ -3,7 +3,7 @@
     Grain: 1 Zeile je Firma und Quelle (hub_firma) + Unbekannt-Zeile (-1). SCD1.
            Dieselbe Firma aus mehreren Quellen bleibt getrennt, bis ein Same-as-Link im Business Vault existiert.
            Firmen mit firma_bk '-1' (anonym/unbekannt) entfallen: Fakten verweisen dafuer auf -1.
-    Quellen: hub_firma, sat_firma__karriere, sat_firma__theirstack, sat_firma__firmenprofil, sat_firma__adzuna, sat_firma__website (jeweils aktueller Stand)
+    Quellen: hub_firma, sat_firma__karriere, sat_firma__theirstack, sat_firma__firmenprofil, sat_firma__adzuna, sat_firma__website, sat_firma__firmenbuch (jeweils aktueller Stand)
 #}
 {{ config(materialized='table', as_columnstore=false, tags=['dimension']) }}
 
@@ -23,6 +23,9 @@ WITH basis AS (
         CAST(k.company_main_location AS NVARCHAR(255))                       AS hauptsitz,
         CAST(t.industry AS NVARCHAR(255))                                    AS branche,
         CAST(t.company_domain AS NVARCHAR(255))                              AS domain,
+        CAST(fb.fn AS NVARCHAR(30))                                          AS fn,
+        CAST(fb.sitz AS NVARCHAR(255))                                       AS firmenbuch_sitz,
+        CAST(fb.rechtsform AS NVARCHAR(255))                                 AS rechtsform,
         CAST(fp.profil_url AS NVARCHAR(1000))                                AS profil_url,
         CAST(fp.website_url AS NVARCHAR(1000))                               AS website,
         CAST(t.is_recruiting_agency AS INT)                                  AS ist_vermittler,
@@ -39,6 +42,8 @@ WITH basis AS (
         ON ad.hk_firma = h.hk_firma AND ad.dss_is_current = 'Y'
     LEFT JOIN {{ ref('sat_firma__website') }} wf
         ON wf.hk_firma = h.hk_firma AND wf.dss_is_current = 'Y'
+    LEFT JOIN {{ ref('sat_firma__firmenbuch') }} fb
+        ON fb.hk_firma = h.hk_firma AND fb.dss_is_current = 'Y'
     WHERE h.firma_bk <> '-1'
 )
 SELECT
@@ -53,6 +58,9 @@ SELECT
     hauptsitz,
     branche,
     domain,
+    fn,
+    firmenbuch_sitz,
+    rechtsform,
     profil_url,
     website,
     ist_vermittler,
@@ -61,5 +69,5 @@ SELECT
 FROM basis
 UNION ALL
 SELECT CAST(-1 AS BIGINT), N'-1', N'-1', N'Unbekannt', N'-1', N'Unbekannt',
-       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
        CAST('1900-01-01' AS DATETIME2), N'SYSTEM'

@@ -156,3 +156,26 @@ models:
     description: "Base-Tabelle (incremental): TED-Bekanntmachungen aus payload.notices, je Lauf und publication-number."
   - name: base_lead_engine__ted_stelle_delta
     description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."
+
+  - name: stg_lead_engine__firmenbuch_firma
+    description: "Staging Firmenbuch (nur sichere Zuordnungen): Firma je Lauf, Kollisionscode = Quelle der Firma. Speist hub_firma und sat_firma__firmenbuch."
+    columns: *stg_firma_columns
+  - name: stg_lead_engine__firmenbuch_ereignis
+    description: "Staging Veränderungen im Firmenbuch je Firma (FN aus sicherer Zuordnung oder Impressum)."
+    columns:
+      - name: hk_firma
+        data_tests: [not_null]
+  - name: base_lead_engine__firmenbuch_zuordnung
+    description: "Base-Tabelle (incremental): Zuordnung der Lead-Engine-Firmen zum Firmenbuch (qualitaet sicher/wahrscheinlich/unsicher/kein_treffer) mit Stammdaten des gewählten Kandidaten."
+    columns:
+      - name: qualitaet
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['sicher', 'wahrscheinlich', 'unsicher', 'kein_treffer']
+  - name: base_lead_engine__firmenbuch_firma
+    description: "Sicht: nur sichere Zuordnungen mit FN."
+  - name: base_lead_engine__firmenbuch_aenderung
+    description: "Base-Tabelle (incremental): Veränderungen im Firmenbuch je Lauf, Zeitraum und FN (Anzahl, jüngstes Datum, Arten)."
+  - name: base_lead_engine__firmenbuch_ereignis
+    description: "Sicht: Veränderungen im Firmenbuch, zugeordnet zu den Firmen der Lead-Engine über die FN."
