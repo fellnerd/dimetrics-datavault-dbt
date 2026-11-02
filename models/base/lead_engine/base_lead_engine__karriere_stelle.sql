@@ -34,7 +34,8 @@ with items as (
         company_slug          nvarchar(200) '$.company.slug',
         company_size          nvarchar(30)  '$.company.employees',
         company_main_location nvarchar(200) '$.company.mainLocation',
-        company_link          nvarchar(400) '$.company.link'
+        company_link          nvarchar(400) '$.company.link',
+        summary               nvarchar(max) '$.summary'
     ) j
     where f.source = 'karriere'
       {{ lead_engine_lauf_filter('f') }}
@@ -73,6 +74,7 @@ select
     (select string_agg(json_value(l.[value], '$.name'), ', ')
        from openjson(r.locations_json) l) as locations,
     r.date_text,
+    r.summary,
     -- fetched_at ist UTC; fuer Heute/Gestern ggf. auf Ortszeit umrechnen
     case
         when r.date_text like 'Heute%'      then cast(r.fetched_at as date)

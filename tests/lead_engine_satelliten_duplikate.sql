@@ -5,7 +5,8 @@
                 ('sat_firma__firmenprofil', 'hk_firma'), ('sat_stelle_sichtung__karriere', 'hk_stelle'),
                 ('sat_stelle_sichtung__theirstack', 'hk_stelle'), ('sat_stelle_sichtung__website', 'hk_stelle'),
                 ('sat_stelle_sichtung__freelancer', 'hk_stelle'),
-                ('sat_stelle__adzuna', 'hk_stelle'), ('sat_firma__adzuna', 'hk_firma'), ('sat_stelle_sichtung__adzuna', 'hk_stelle')] -%}
+                ('sat_stelle__adzuna', 'hk_stelle'), ('sat_stelle__karriere_text', 'hk_stelle'), ('sat_stelle__theirstack_detail', 'hk_stelle'),
+                ('sat_firma__theirstack_detail', 'hk_firma'), ('sat_stelle__freelancer_detail', 'hk_stelle'), ('sat_firma__adzuna', 'hk_firma'), ('sat_stelle_sichtung__adzuna', 'hk_stelle')] -%}
 {% for sat, pk in sats %}
 select '{{ sat }}' as satellit, {{ pk }} as hash_key, dss_load_date, count(*) as anzahl
 from {{ ref(sat) }}

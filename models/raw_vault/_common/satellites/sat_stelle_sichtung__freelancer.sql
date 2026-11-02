@@ -12,6 +12,7 @@
     (lead_engine_delta). Daher abhaengig von allen anderen Konsumenten desselben Stagings. -#}
 -- depends_on: {{ ref('hub_stelle') }}
 -- depends_on: {{ ref('sat_stelle__freelancer') }}
+-- depends_on: {{ ref('sat_stelle__freelancer_detail') }}
 {{ config(
     materialized='incremental',
     as_columnstore=false,

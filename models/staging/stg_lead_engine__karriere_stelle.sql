@@ -36,6 +36,9 @@ hashed_columns:
   hd_firma__karriere:
     is_hashdiff: true
     columns: [company_name, company_slug, company_size, company_main_location, company_link]
+  hd_stelle_text__karriere:
+    is_hashdiff: true
+    columns: [summary]
   hd_stelle_sichtung__karriere:
     is_hashdiff: true
     columns: [run_id, query_ids, profil_ids]

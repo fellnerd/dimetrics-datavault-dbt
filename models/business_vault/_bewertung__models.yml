@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: bv_firma_same_as
+    description: "Master je Firma über alle Quellen: Regel Domain, dann normalisierter Name (FN folgt mit Phase B). Ausgabe master_firma_bk, abgleich_regel."
+    columns:
+      - name: hk_firma
+        data_tests: [not_null, unique]
+      - name: master_firma_bk
+        data_tests: [not_null]
+  - name: bv_stelle_text
+    description: "Hilfstabelle: Titel und Text je Stelle normalisiert (für bv_stelle_thema)."
+    columns:
+      - name: hk_stelle
+        data_tests: [not_null, unique]
+  - name: bv_stelle_merkmale
+    description: "Eine Zeile je Stelle, aktueller Stand: Text, Veröffentlichung, Vertragsart, Region, Firma/Master, Budget, Reaktionen."
+    columns:
+      - name: hk_stelle
+        data_tests: [not_null, unique]
+  - name: bv_stelle_thema
+    description: "Treffer je Stelle x Thema x Begriff mit Fundort (Titel/Text), Regeln wie im Collector (relevanz.py)."
+    columns:
+      - name: hk_stelle
+        data_tests: [not_null]
+  - name: bv_stelle_cluster
+    description: "Dieselbe Stelle über mehrere Quellen: Cluster aus Master-Firma + normalisiertem Titel, Repräsentant mit dem besten Text."
+    columns:
+      - name: hk_stelle
+        data_tests: [not_null, unique]
+      - name: cluster_key
+        data_tests: [not_null]
+  - name: bv_gelegenheit_score
+    description: "Eine Zeile je Cluster: Lead-Typ, alle Bausteine einzeln, Vorscore, Begründung. Ausgeschlossene bleiben mit Kennzeichen."
+    columns:
+      - name: cluster_key
+        data_tests: [not_null, unique]
+      - name: vorscore
+        data_tests: [not_null]
+  - name: ref_lead_engine__thema
+    description: "Begriffe der Bewertung aus der Landing-Quelle suchprofil (jüngster Stand)."
+  - name: ref_lead_engine__gewicht
+    description: "Gewichte und Punkte: Seed-Startwerte, überschrieben durch gewichte[] aus suchprofil."
+    columns:
+      - name: schluessel
+        data_tests: [not_null]
+  - name: ref_lead_engine__ort
+    description: "Orte und PLZ Österreichs (Statistik Austria, CC BY 4.0), jüngster Stand."
+  - name: ref_lead_engine__ort_name
+    description: "Ortsname -> Bundesland/Bezirk für den Abgleich ohne PLZ."

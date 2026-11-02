@@ -4,11 +4,13 @@
     als letztes Objekt geladen (-- depends_on in den Sichtungs-Satelliten); bricht ein Lauf vorher ab,
     bleibt der Wasserstand stehen und der naechste Lauf holt den Rest nach (automate_dv apply_source_filter
     macht das Wiedereinlesen idempotent). Existiert der Satellit noch nicht (Erstladung), gibt es keinen Filter.
+    Backfill neuer Satelliten: --vars '{lead_engine_vollstaendig: true}' ueberspringt den Filter (Staging liest die ganze Base-Historie),
+    damit ein neuer Satellit die volle Historie bekommt, ohne die bestehenden Satelliten neu zu laden.
     Verwendung: {{ lead_engine_delta('base_lead_engine__karriere_stelle', 'sat_stelle_sichtung__karriere') }}
 -#}
 {%- set rel = adapter.get_relation(database=target.database, schema='vault', identifier=sichtung_sat) -%}
 SELECT * FROM {{ ref(base_model) }}
-{%- if execute and rel is not none %}
+{%- if execute and rel is not none and not var('lead_engine_vollstaendig', false) %}
 WHERE run_id > COALESCE((SELECT MAX(run_id) FROM {{ rel }}), '')
 {%- endif %}
 {% endmacro %}

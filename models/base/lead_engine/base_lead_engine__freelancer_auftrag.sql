@@ -17,7 +17,9 @@ with items as (
         j.titel, j.url,
         j.beschreibung,   -- OPENJSON statt JSON_VALUE: JSON_VALUE liefert bei Texten ueber 4000 Zeichen NULL
         j.kategorie_pfad_json, j.kategorie_slug, j.budget, j.veroeffentlicht, j.ort,
-        j.zuletzt_geaendert, j.status, j.anzahl_reaktionen
+        j.zuletzt_geaendert, j.status, j.anzahl_reaktionen,
+        j.n_veroeffentlicht, j.n_zuletzt_geaendert, j.n_reaktionen, j.n_status, j.n_ist_remote, j.n_ort, j.n_land,
+        j.n_budget_min, j.n_budget_max, j.n_budget_einheit
     from {{ source('lead_engine', 'lead_engine_datei') }} f
     cross apply openjson(f.payload) with (
         auftrags_id          nvarchar(40)   '$.auftrags_id',
@@ -31,7 +33,17 @@ with items as (
         ort                  nvarchar(255)  '$.felder.Ort',
         zuletzt_geaendert    nvarchar(50)   '$.felder."Zuletzt geändert"',
         status               nvarchar(100)  '$.felder.Status',
-        anzahl_reaktionen    int            '$.anzahl_reaktionen'
+        anzahl_reaktionen    int            '$.anzahl_reaktionen',
+        n_veroeffentlicht  nvarchar(30)  '$.norm.veroeffentlicht_am',
+        n_zuletzt_geaendert nvarchar(30) '$.norm.zuletzt_geaendert_am',
+        n_reaktionen       int           '$.norm.reaktionen',
+        n_status           nvarchar(50)  '$.norm.status',
+        n_ist_remote       bit           '$.norm.ist_remote',
+        n_ort              nvarchar(255) '$.norm.ort',
+        n_land             nvarchar(10)  '$.norm.land',
+        n_budget_min       float         '$.norm.budget_min',
+        n_budget_max       float         '$.norm.budget_max',
+        n_budget_einheit   nvarchar(30)  '$.norm.budget_einheit'
     ) j
     where f.source = 'freelancer'
       and f.query_id = 'details'
@@ -55,6 +67,16 @@ select
     r.kategorie_slug, r.budget, r.ort, r.status,
     r.veroeffentlicht, r.zuletzt_geaendert,
     r.anzahl_reaktionen,
+    try_cast(r.n_veroeffentlicht as date)   as norm_veroeffentlicht_am,
+    try_cast(r.n_zuletzt_geaendert as date) as norm_zuletzt_geaendert_am,
+    r.n_reaktionen                          as norm_reaktionen,
+    r.n_status                              as norm_status,
+    r.n_ist_remote                          as norm_ist_remote,
+    r.n_ort                                 as norm_ort,
+    r.n_land                                as norm_land,
+    r.n_budget_min                          as norm_budget_min,
+    r.n_budget_max                          as norm_budget_max,
+    r.n_budget_einheit                      as norm_budget_einheit,
     -- Profile der Detaildatei: profil_treffer ist {"<auftrags_id>": ["<profil>", ...]}, Join ueber den OPENJSON-Schluessel
     (select string_agg(v.[value], ',') within group (order by v.[value])
        from (select distinct pv.[value]

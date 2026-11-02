@@ -37,6 +37,12 @@ hashed_columns:
   hd_firma__theirstack:
     is_hashdiff: true
     columns: [company_name, company_domain, employee_count, employee_count_range, industry, company_linkedin, is_recruiting_agency]
+  hd_stelle_detail__theirstack:
+    is_hashdiff: true
+    columns: [description, state_code, country_code, latitude, longitude, short_location, reposted, employment_statuses, keyword_slugs]
+  hd_firma_detail__theirstack:
+    is_hashdiff: true
+    columns: [company_city, company_postal_code, company_country_code, technology_names, industry_id]
   hd_stelle_sichtung__theirstack:
     is_hashdiff: true
     columns: [run_id, query_ids, profil_ids]

@@ -105,3 +105,16 @@ models:
   - name: sat_stelle_sichtung__adzuna
     description: "Sichtungs-Satellit, Quelle Adzuna (jede Anzeige nur einmal, im Lauf nach ihrem Erscheinen)."
     columns: *sat_stelle_columns
+
+  - name: sat_stelle__karriere_text
+    description: "Kurztext (summary) der karriere.at-Stelle aus den Suchergebnissen."
+    columns: *sat_stelle_columns
+  - name: sat_stelle__theirstack_detail
+    description: "TheirStack-Stelle: Beschreibung, Bundesland/Land, Koordinaten, Kurzort, reposted, Beschäftigungsarten, Keywords."
+    columns: *sat_stelle_columns
+  - name: sat_firma__theirstack_detail
+    description: "TheirStack-Firma: Ort, PLZ, Land, Technologien, Branche-ID (ohne num_jobs_last_30_days)."
+    columns: *sat_firma_columns
+  - name: sat_stelle__freelancer_detail
+    description: "freelancer.at: normalisierte Felder (payload.norm): Veröffentlichung, Änderung, Reaktionen, remote, Ort, Land, Budget min/max/Einheit."
+    columns: *sat_stelle_columns

@@ -35,7 +35,21 @@ with items as (
         employee_count       int           '$.company_object.employee_count',
         employee_count_range nvarchar(50)  '$.company_object.employee_count_range',
         industry             nvarchar(200) '$.company_object.industry',
-        is_recruiting_agency bit           '$.company_object.is_recruiting_agency'
+        is_recruiting_agency bit           '$.company_object.is_recruiting_agency',
+        description          nvarchar(max) '$.description',
+        state_code           nvarchar(20)  '$.state_code',
+        country_code         nvarchar(10)  '$.country_code',
+        latitude             float         '$.latitude',
+        longitude            float         '$.longitude',
+        short_location       nvarchar(255) '$.short_location',
+        reposted             bit           '$.reposted',
+        employment_statuses_json nvarchar(max) '$.employment_statuses' as json,
+        keyword_slugs_json   nvarchar(max) '$.keyword_slugs' as json,
+        company_city         nvarchar(255) '$.company_object.city',
+        company_postal_code  nvarchar(20)  '$.company_object.postal_code',
+        company_country_code nvarchar(10)  '$.company_object.country_code',
+        technology_names_json nvarchar(max) '$.company_object.technology_names' as json,
+        industry_id          nvarchar(40)  '$.company_object.industry_id'
     ) j
     where f.source = 'theirstack'
       {{ lead_engine_lauf_filter('f') }}
@@ -75,6 +89,12 @@ select
        from openjson(r.technologies_json) t) as technologies,
     r.company_name, r.company_domain, r.company_linkedin,
     r.employee_count, r.employee_count_range, r.industry, r.is_recruiting_agency,
+    -- Phase A: Detailfelder (neue Satelliten sat_stelle__theirstack_detail / sat_firma__theirstack_detail); Listen sortiert, damit der Hashdiff stabil bleibt
+    r.description, r.state_code, r.country_code, r.latitude, r.longitude, r.short_location, r.reposted,
+    (select string_agg(x.[value], ', ') within group (order by x.[value]) from openjson(r.employment_statuses_json) x) as employment_statuses,
+    (select string_agg(x.[value], ', ') within group (order by x.[value]) from openjson(r.keyword_slugs_json) x)       as keyword_slugs,
+    r.company_city, r.company_postal_code, r.company_country_code, r.industry_id,
+    (select string_agg(x.[value], ', ') within group (order by x.[value]) from openjson(r.technology_names_json) x)    as technology_names,
     q.query_ids,
     p.profil_ids
 from ranked r

@@ -1,0 +1,38 @@
+bereich,schluessel,punkte,bemerkung
+typ,A1,25,Auftrag direkt (freelancer.at)
+typ,A2,20,Projekt ueber Vermittler
+typ,A3,20,Oeffentliche Ausschreibung (TED)
+typ,B1,15,Ueberbrueckungsbedarf
+typ,B2,8,Bedarfssignal (Festanstellung im Thema)
+typ,C,15,Partner (IT-Dienstleister/Beratung)
+region,Kaernten,20,
+region,remote,20,
+region,Steiermark,15,
+region,Salzburg,15,
+region,Osttirol,15,
+region,Oberoesterreich,8,
+region,Nordtirol,8,
+region,Wien,6,
+region,Niederoesterreich,6,
+region,Burgenland,6,
+region,Vorarlberg,6,
+region,hybrid_bonus,4,nur Wien/NOe/Burgenland/Vorarlberg
+region,DACH,3,
+region,unbekannt,5,
+frische,tage_3,15,
+frische,tage_7,12,
+frische,tage_14,8,
+frische,tage_30,4,
+frische,aelter,0,
+thema,deckel,35,Summe gedeckelt
+thema,titel_faktor,2,Titel zaehlt doppelt
+thema,ohne_kernthema_max,20,Obergrenze ohne Kernthema im Titel
+passung,stundensatz_ab_60,3,Stundensatz ab 60 EUR oder Budget genannt
+passung,firmengroesse_20_500,2,
+bonus,lange_offen,5,mehr als 45 Tage online oder neu ausgeschrieben
+bonus,reaktionen_max_3,5,hoechstens 3 Reaktionen
+bonus,zweite_gelegenheit,5,zweite relevante Gelegenheit derselben Firma in 60 Tagen
+abzug,konzern,-10,Konzern oder Konzerntochter
+abzug,negativ_titel,-15,Negativbegriff im Titel
+schwelle,lange_offen_tage,45,
+schwelle,konzern_mitarbeiter,2500,

@@ -110,3 +110,25 @@ models:
         data_tests: [not_null]
       - name: anzahl_stellen_60t
         data_tests: [not_null]
+
+  - name: lead_gelegenheiten_v
+    description: |
+      Publizierte View: 1 Zeile je Gelegenheit (Cluster derselben Stelle über mehrere Quellen), veröffentlicht oder zuletzt gesehen in den
+      letzten 30 Tagen, ohne Festanstellung über Vermittler. Lead-Typ, Vorscore und alle Bausteine, Text, Firma, Ort, Konditionen.
+      Erste Fassung ohne FN, Detailtexte, Lead-Status, Sperrliste, TED, Firmenbuch.
+    columns:
+      - name: gelegenheit_key
+        data_tests: [not_null, unique]
+      - name: lead_typ
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['A1', 'A2', 'A3', 'B1', 'B2', 'C']
+      - name: vorscore
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -25
+                max_value: 100

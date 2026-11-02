@@ -15,6 +15,7 @@
 -- depends_on: {{ ref('link_stelle_firma') }}
 -- depends_on: {{ ref('sat_stelle__karriere') }}
 -- depends_on: {{ ref('sat_firma__karriere') }}
+-- depends_on: {{ ref('sat_stelle__karriere_text') }}
 {{ config(
     materialized='incremental',
     as_columnstore=false,

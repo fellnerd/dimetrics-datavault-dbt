@@ -25,7 +25,17 @@ with items as (
         antworten          nvarchar(20)   '$.felder.Antworten',
         ort                nvarchar(255)  '$.felder.Ort',
         zuletzt_geaendert  nvarchar(50)   '$.felder."Zuletzt geändert"',
-        status             nvarchar(100)  '$.felder.Status'
+        status             nvarchar(100)  '$.felder.Status',
+        n_veroeffentlicht  nvarchar(30)  '$.norm.veroeffentlicht_am',
+        n_zuletzt_geaendert nvarchar(30) '$.norm.zuletzt_geaendert_am',
+        n_reaktionen       int           '$.norm.reaktionen',
+        n_status           nvarchar(50)  '$.norm.status',
+        n_ist_remote       bit           '$.norm.ist_remote',
+        n_ort              nvarchar(255) '$.norm.ort',
+        n_land             nvarchar(10)  '$.norm.land',
+        n_budget_min       float         '$.norm.budget_min',
+        n_budget_max       float         '$.norm.budget_max',
+        n_budget_einheit   nvarchar(30)  '$.norm.budget_einheit'
     ) j
     where f.source = 'freelancer'
       and f.query_id = 'liste'
@@ -63,6 +73,16 @@ select
     r.fetched_at,
     r.auftrags_id,
     r.titel, r.url, r.beschreibung_kurz, r.budget, r.ort, r.status,
+    try_cast(r.n_veroeffentlicht as date)   as norm_veroeffentlicht_am,
+    try_cast(r.n_zuletzt_geaendert as date) as norm_zuletzt_geaendert_am,
+    r.n_reaktionen                          as norm_reaktionen,
+    r.n_status                              as norm_status,
+    r.n_ist_remote                          as norm_ist_remote,
+    r.n_ort                                 as norm_ort,
+    r.n_land                                as norm_land,
+    r.n_budget_min                          as norm_budget_min,
+    r.n_budget_max                          as norm_budget_max,
+    r.n_budget_einheit                      as norm_budget_einheit,
     r.platziert, r.zuletzt_geaendert,
     try_cast(r.antworten as int) as antworten,
     {{ lead_engine_freelancer_datum('r.platziert', 'r.fetched_at') }}         as platziert_am,

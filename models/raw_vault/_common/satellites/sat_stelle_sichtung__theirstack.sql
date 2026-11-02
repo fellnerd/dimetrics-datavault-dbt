@@ -15,6 +15,8 @@
 -- depends_on: {{ ref('link_stelle_firma') }}
 -- depends_on: {{ ref('sat_stelle__theirstack') }}
 -- depends_on: {{ ref('sat_firma__theirstack') }}
+-- depends_on: {{ ref('sat_stelle__theirstack_detail') }}
+-- depends_on: {{ ref('sat_firma__theirstack_detail') }}
 {{ config(
     materialized='incremental',
     as_columnstore=false,

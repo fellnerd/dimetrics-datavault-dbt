@@ -29,6 +29,9 @@ hashed_columns:
   hd_stelle__freelancer:
     is_hashdiff: true
     columns: [title, url, beschreibung, kategorie, budget, location, status, veroeffentlicht_am]
+  hd_stelle_detail__freelancer:
+    is_hashdiff: true
+    columns: [norm_veroeffentlicht_am, norm_zuletzt_geaendert_am, norm_reaktionen, norm_ist_remote, norm_ort, norm_land, norm_budget_min, norm_budget_max, norm_budget_einheit]
   hd_stelle_sichtung__freelancer:
     is_hashdiff: true
     columns: [run_id, query_ids, profil_ids]
