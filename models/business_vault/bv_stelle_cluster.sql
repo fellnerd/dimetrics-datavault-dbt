@@ -5,9 +5,11 @@
     Stellen ohne bekannte Firma (z. B. freelancer.at) oder ohne Titel bilden ein eigenes Cluster.
     Repraesentant: die Stelle mit dem besten Text (laengster Text, dann Quellen-Reihenfolge TheirStack, freelancer, Adzuna, karriere, website).
     Grain: 1 Zeile je hk_stelle mit cluster_key; ist_repraesentant = 1 genau einmal je Cluster.
+    Materialisierung: Tabelle (statt View): die Titel-Normalisierung und der Cluster-Schluessel werden von bv_gelegenheit_basis und -score mehrfach
+    gebraucht; als View wurde sie je Zeile neu berechnet (quadratisch).
     Version: 2026-10-26 V1.0 Erste Fassung
 #}
-{{ config(materialized='view', tags=['business_vault']) }}
+{{ config(materialized='table', as_columnstore=false, tags=['business_vault']) }}
 
 with m as (
     select hk_stelle, quelle, stelle_bk, master_firma_bk, titel,
@@ -34,11 +36,17 @@ r as (
                                        k.hk_stelle) as rn,
            count(*) over (partition by k.cluster_text) as anzahl_stellen
     from k
+),
+
+q as (   -- verschiedene Quellen je Cluster, einmal je Cluster statt je Zeile
+    select x.cluster_text, string_agg(x.quelle, ', ') within group (order by x.quelle) as quellen_im_cluster
+    from (select distinct cluster_text, quelle from r) x
+    group by x.cluster_text
 )
 
 select r.hk_stelle, r.cluster_key, case when r.rn = 1 then 1 else 0 end as ist_repraesentant,
        r.anzahl_stellen as anzahl_stellen_im_cluster,
-       (select string_agg(q.quelle, ', ') within group (order by q.quelle)
-          from (select distinct r2.quelle from r r2 where r2.cluster_text = r.cluster_text) q) as quellen_im_cluster,
+       q.quellen_im_cluster,
        r.titel_norm
 from r
+join q on q.cluster_text = r.cluster_text

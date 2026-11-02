@@ -132,3 +132,16 @@ models:
               arguments:
                 min_value: -25
                 max_value: 100
+
+  - name: lead_firmen_v
+    description: |
+      Publizierte View: 1 Zeile je Master-Firma (bv_firma_same_as) mit mindestens einer Gelegenheit in den letzten 30 Tagen: bester Vorscore,
+      Zahl der Gelegenheiten (ab 40), Themen, Regionen, Größe, Konzern, Technologien, Quellen. firma_id ist varchar. Firmenbuch-Ereignisse
+      und Status folgen (Phase B).
+    columns:
+      - name: firma_id
+        data_tests: [not_null, unique]
+      - name: master_firma_bk
+        data_tests: [not_null, unique]
+      - name: bester_vorscore
+        data_tests: [not_null]

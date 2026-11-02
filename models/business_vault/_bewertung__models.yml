@@ -48,3 +48,15 @@ models:
     description: "Orte und PLZ Österreichs (Statistik Austria, CC BY 4.0), jüngster Stand."
   - name: ref_lead_engine__ort_name
     description: "Ortsname -> Bundesland/Bezirk für den Abgleich ohne PLZ."
+
+  - name: bv_gelegenheit_basis
+    description: "Hilfstabelle für bv_gelegenheit_score: je Cluster Merkmale, Themen-Summe, Negativ-Treffer und Lead-Typ (einmal berechnet)."
+    columns:
+      - name: cluster_key
+        data_tests: [not_null, unique]
+  - name: bv_firma_sperre
+    description: "Master-Firmen auf der Sperrliste (Abgleich über FN, Domain oder normalisierten Namen)."
+  - name: ref_lead_engine__lead_status
+    description: "Lead-Status aus dem Suchprofil (jüngster Stand je gelegenheit_id bzw. Firma)."
+  - name: ref_lead_engine__sperrliste
+    description: "Sperrliste aus der Landing-Quelle sperrliste (ohne Beispielzeile und abgelaufene Einträge)."

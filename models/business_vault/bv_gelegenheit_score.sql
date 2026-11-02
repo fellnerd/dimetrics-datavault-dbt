@@ -10,9 +10,10 @@
     Negativbegriff im Titel: Typ- und Region-Punkte entfallen (zusaetzlich zum Abzug).
     Hybrid-Bonus: wenn hybrid und die Region unter 10 Punkten liegt (Gewichte-Blatt).
     Bausteine: p_thema (0-35), p_typ, p_region (0-20), p_frische (0-15), p_passung (0-5), p_bonus (bis +15), p_abzug (bis -25); vorscore = Summe.
+    Materialisierung: Tabelle (statt View): lead_gelegenheiten_v und lead_firmen_v lesen sie mehrfach, als View waere jede Abfrage zu teuer.
     Version: 2026-10-26 V1.0 Erste Fassung
 #}
-{{ config(materialized='view', tags=['business_vault']) }}
+{{ config(materialized='table', as_columnstore=false, tags=['business_vault']) }}
 
 with par as (   -- skalare Parameter aus den Gewichten
     select
@@ -32,62 +33,8 @@ with par as (   -- skalare Parameter aus den Gewichten
     from {{ ref('ref_lead_engine__gewicht') }}
 ),
 
-rep as (   -- Repraesentant je Cluster mit seinen Merkmalen
-    select c.cluster_key, c.anzahl_stellen_im_cluster, c.quellen_im_cluster, m.*
-    from {{ ref('bv_stelle_cluster') }} c
-    join {{ ref('bv_stelle_merkmale') }} m on m.hk_stelle = c.hk_stelle
-    where c.ist_repraesentant = 1
-),
-
-treffer as (   -- Themen-Treffer ueber alle Stellen des Clusters; je Thema der staerkste Begriff
-    select c.cluster_key, t.thema, t.begriff, t.gewicht, t.fundort
-    from {{ ref('bv_stelle_cluster') }} c
-    join {{ ref('bv_stelle_thema') }} t on t.hk_stelle = c.hk_stelle
-),
-
-je_thema as (
-    select tr.cluster_key, tr.thema,
-           max(case when tr.fundort = 'titel' then tr.gewicht * p.titel_faktor else tr.gewicht end) as punkte,
-           max(case when tr.fundort = 'titel' then 1 else 0 end) as im_titel,
-           max(tr.begriff) as begriff
-    from treffer tr cross join par p
-    where tr.thema <> 'Negativ'
-    group by tr.cluster_key, tr.thema
-),
-
-thema_summe as (
-    select jt.cluster_key,
-           sum(jt.punkte) as roh,
-           max(case when jt.im_titel = 1 and jt.thema in ('Datenplattform', 'BI und Reporting', 'KI', 'Controlling') then 1 else 0 end) as kern_im_titel,
-           string_agg(jt.thema + ': ' + jt.begriff + case when jt.im_titel = 1 then ' (Titel)' else '' end, ' | ') within group (order by jt.punkte desc) as themen,
-           max(jt.thema + ': ' + jt.begriff + case when jt.im_titel = 1 then ' (Titel)' else '' end) as top_thema_text
-    from je_thema jt
-    group by jt.cluster_key
-),
-
-negativ as (
-    select distinct cluster_key from treffer where thema = 'Negativ' and fundort = 'titel'
-),
-
 basis as (
-    select r.*,
-           coalesce(ts.roh, 0) as thema_roh, coalesce(ts.kern_im_titel, 0) as kern_im_titel, ts.themen,
-           case when ng.cluster_key is not null then 1 else 0 end as negativ_titel,
-           case when r.quelle = 'freelancer' then 'A1'
-                when r.quelle = 'ted' then 'A3'
-                when r.ist_vermittler = 1 and r.vertragsart in ('freiberuflich', 'projekt', 'befristet') then 'A2'
-                when r.aus_projektarbeit = 1 or r.aus_projekte_suche = 1 then 'A2'
-                when r.ist_vermittler = 1 then null
-                when coalesce(ts.roh, 0) > 0 and (lower(coalesce(r.branche, '')) like '%consult%' or lower(coalesce(r.branche, '')) like '%it services%'
-                       or lower(coalesce(r.branche, '')) like '%information technology%' or lower(coalesce(r.firma_name, '')) like '%consult%'
-                       or lower(coalesce(r.firma_name, '')) like '%beratung%') then 'C'
-                when lower(coalesce(r.titel, '')) like '%interim%' or lower(coalesce(r.titel, '')) like '%karenz%' or lower(coalesce(r.titel, '')) like '%elternzeit%'
-                       or lower(coalesce(left(r.text, 4000), '')) like '%karenz%' or lower(coalesce(left(r.text, 4000), '')) like '%elternzeit%'
-                       or r.vertragsart = 'befristet' or r.tage_online > (select s_lange_offen from par) or r.ist_reposted = 1 then 'B1'
-                else 'B2' end as lead_typ
-    from rep r
-    left join thema_summe ts on ts.cluster_key = r.cluster_key
-    left join negativ ng on ng.cluster_key = r.cluster_key
+    select * from {{ ref('bv_gelegenheit_basis') }}
 ),
 
 zweite as (   -- weitere relevante Gelegenheit derselben Master-Firma in den letzten 60 Tagen
@@ -125,13 +72,31 @@ punkte as (
     from basis b
     cross join par p
     left join zweite z on z.cluster_key = b.cluster_key
+),
+
+markiert as (
+    select p.*,
+           ls.status                                                   as status_roh,
+           ls.datum                                                    as status_am,
+           sp.sperr_grund,
+           case when p.lead_typ is null then 'Festanstellung ueber Vermittler'
+                when sp.master_firma_bk is not null then 'Sperrliste: ' + coalesce(sp.sperr_grund, 'gesperrt')
+                when ls.status in ('beworben', 'kontaktiert', 'kein fit', 'erledigt') then 'Lead-Status: ' + ls.status
+           end                                                         as ausschluss_grund_neu
+    from punkte p
+    left join {{ ref('bv_firma_sperre') }} sp on sp.master_firma_bk = p.master_firma_bk
+    left join {{ ref('ref_lead_engine__lead_status') }} ls
+           on ls.gelegenheit_id = p.cluster_key
+           or (ls.gelegenheit_id is null and p.master_firma_bk is not null
+               and ls.firma_norm = (select top 1 f.name_norm from {{ ref('bv_firma_same_as') }} f where f.master_firma_bk = p.master_firma_bk and f.name_norm <> ''))
 )
 
 select
     cluster_key, hk_stelle, quelle, stelle_bk, anzahl_stellen_im_cluster, quellen_im_cluster,
     lead_typ,
-    case when lead_typ is null then 1 else 0 end as ausgeschlossen,
-    case when lead_typ is null then 'Festanstellung ueber Vermittler' end as ausschluss_grund,
+    case when ausschluss_grund_neu is not null then 1 else 0 end as ausgeschlossen,
+    ausschluss_grund_neu as ausschluss_grund,
+    status_roh as status, status_am,
     p_thema, coalesce(p_typ, 0) as p_typ, p_region, p_frische, p_passung, p_bonus, p_abzug,
     p_thema + coalesce(p_typ, 0) + p_region + p_frische + p_passung + p_bonus + p_abzug as vorscore,
     themen, kern_im_titel, negativ_titel, ist_konzern,
@@ -146,4 +111,4 @@ select
     titel, text, text_quelle, url, veroeffentlicht_am, datum_geschaetzt, erste_sichtung, letzte_sichtung, tage_online,
     vertragsart, ist_remote, ist_hybrid, ort, bundesland, land, region_gruppe, plz,
     master_firma_bk, firma_name, ist_vermittler, mitarbeiter, branche, technologien, budget_text, stundensatz_min, reaktionen, ist_online
-from punkte
+from markiert
