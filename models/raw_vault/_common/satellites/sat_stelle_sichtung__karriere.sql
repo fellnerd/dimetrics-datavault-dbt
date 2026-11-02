@@ -16,6 +16,8 @@
 -- depends_on: {{ ref('sat_stelle__karriere') }}
 -- depends_on: {{ ref('sat_firma__karriere') }}
 -- depends_on: {{ ref('sat_stelle__karriere_text') }}
+-- depends_on: {{ ref('sat_stelle__karriere_detail') }}
+-- depends_on: {{ ref('sat_firma__impressum') }}
 {{ config(
     materialized='incremental',
     as_columnstore=false,

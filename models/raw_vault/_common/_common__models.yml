@@ -122,3 +122,18 @@ models:
   - name: sat_firma__website
     description: "Firmenname aus payload.company.name der Website-Datei (ersetzt 'UNKNOWN' bei Domain-Firmen)."
     columns: *sat_firma_columns
+
+  - name: sat_firma__impressum
+    description: "Impressum der Firma (Website): Firmenbuchnummer, UID, PLZ, Ort, Firmenname, Konzernhinweis, fremde Jobdomain."
+    columns: *sat_firma_columns
+  - name: sat_stelle__karriere_detail
+    description: "Detailseite der karriere.at-Stelle: Beschreibung, Veröffentlichung, gültig bis, Beschäftigungsart, Orte, PLZ, Region, Land, Gehalt."
+    columns:
+      - name: hk_stelle
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('hub_stelle'), field: hk_stelle}
+              config: {severity: warn}
+      - name: hashdiff
+        data_tests: [not_null]

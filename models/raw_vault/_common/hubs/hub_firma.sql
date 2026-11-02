@@ -19,6 +19,7 @@ source_model:
   - "stg_lead_engine__website_stelle__firma"
   - "stg_lead_engine__firmenprofil_firma"
   - "stg_lead_engine__adzuna_stelle__firma"
+  - "stg_lead_engine__website_firma"
 src_pk: "hk_firma"
 src_nk:
   - "collision_code"

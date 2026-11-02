@@ -1,13 +1,13 @@
 {#
     Business Vault (virtuell): bv_stelle_merkmale
     Grain: 1 Zeile je hk_stelle (Stelle/Auftrag je Quelle), aktueller Stand.
-    Prioritaeten: text: TheirStack description > freelancer.at > Adzuna > karriere summary (Detailseiten folgen in Phase B);
-                  veroeffentlicht_am: karriere date > TheirStack date_posted > freelancer norm > freelancer.at > Adzuna created,
+    Prioritaeten: text: karriere-Detailseite > TheirStack description > freelancer.at > Adzuna > karriere summary;
+                  veroeffentlicht_am: karriere datePosted (Detailseite) > karriere date > TheirStack date_posted > freelancer norm > freelancer.at > Adzuna created,
                   Fallback erste Sichtung (datum_geschaetzt = 1).
     ist_online: Stelle im juengsten Lauf ihrer Quelle noch gesehen; NULL fuer Adzuna (jede Anzeige nur einmal, Delta).
     Region: Ort -> Bundesland ueber ref_lead_engine__ort_name (PLZ folgt, sobald vorhanden); region_gruppe passt zu den
             Schluesseln im Bereich 'region' der Gewichte (Kaernten, Steiermark, ..., Osttirol, Nordtirol, DACH, unbekannt).
-    Nicht enthalten (Phase B): FN/Impressum, Detailtexte, Lead-Status, Firmenbuch, TED.
+    Nicht enthalten (Phase B): Website-Detailtexte, Lead-Status, Firmenbuch, TED.
     Materialisierung: Tabelle statt View (Business Vault sonst virtuell): die Berechnung (viele Satelliten, Textnormalisierung) wird von
     bv_stelle_thema, bv_stelle_cluster und bv_gelegenheit_score mehrfach gebraucht und waere als View je Abfrage zu teuer.
     Version: 2026-10-26 V1.0 Erste Fassung
@@ -52,29 +52,32 @@ basis as (
         h.hk_stelle, h.collision_code as quelle, h.stelle_bk,
         coalesce(k.title, t.title, w.title, fl.title, az.title)                         as titel,
         coalesce(k.link, t.url, w.url, fl.url, az.url)                                  as url,
-        case when td.description is not null and td.description <> ''  then td.description
+        case when kd.beschreibung is not null and kd.beschreibung <> '' then kd.beschreibung
+             when td.description is not null and td.description <> ''  then td.description
              when fl.beschreibung is not null and fl.beschreibung <> '' then fl.beschreibung
              when az.description is not null and az.description <> ''   then az.description
              else kt.summary end                                                        as text,
-        case when td.description is not null and td.description <> ''  then 'theirstack'
+        case when kd.beschreibung is not null and kd.beschreibung <> '' then 'karriere_detail'
+             when td.description is not null and td.description <> ''  then 'theirstack'
              when fl.beschreibung is not null and fl.beschreibung <> '' then 'freelancer'
              when az.description is not null and az.description <> ''   then 'adzuna'
              when kt.summary is not null and kt.summary <> ''           then 'karriere_summary' end as text_quelle,
-        coalesce(k.posted_date, t.date_posted, fd.norm_veroeffentlicht_am, fl.veroeffentlicht_am, az.created_am) as veroeffentlicht_roh,
+        coalesce(kd.veroeffentlicht_am, k.posted_date, t.date_posted, fd.norm_veroeffentlicht_am, fl.veroeffentlicht_am, az.created_am) as veroeffentlicht_roh,
         s.erste_sichtung, s.letzte_sichtung,
         td.reposted                                                                     as ist_reposted,
         case when h.collision_code = 'adzuna' then null
              when s.letzter_run_id = lq.run_id then 1 else 0 end                        as ist_online,
-        lower(concat_ws(' ', k.employment_types, td.employment_statuses, az.contract_type, az.contract_time,
+        lower(concat_ws(' ', k.employment_types, kd.employment_type, td.employment_statuses, az.contract_type, az.contract_time,
                         case when h.collision_code = 'freelancer' then 'freiberuflich' end)) as vertrag_roh,
         coalesce(t.is_remote, fd.norm_ist_remote,
                  case when lower(fl.location) like '%ferne%' or lower(coalesce(k.title, t.title, w.title, fl.title, az.title)) like '%remote%' then 1 end) as ist_remote_roh,
         coalesce(t.is_hybrid, k.is_home_office,
                  case when lower(coalesce(k.title, t.title, w.title, fl.title, az.title)) like '%hybrid%' then 1 end) as ist_hybrid_roh,
-        coalesce(nullif(fd.norm_ort, ''), nullif(az.location_name, ''), nullif(k.locations, ''), nullif(td.short_location, ''),
+        coalesce(nullif(fd.norm_ort, ''), nullif(az.location_name, ''), nullif(kd.orte_text, ''), nullif(k.locations, ''), nullif(td.short_location, ''),
                  nullif(t.location, ''), nullif(fl.location, ''))                       as ort_roh,
-        az.location_area,
-        coalesce(fd.norm_land, td.country_code)                                         as land_roh,
+        concat_ws(' ', az.location_area, kd.region)                                     as location_area,
+        kd.plz                                                                          as plz_roh,
+        coalesce(fd.norm_land, td.country_code, kd.land)                                as land_roh,
         coalesce(k.salary, fl.budget,
                  case when az.salary_min is not null then concat(cast(cast(az.salary_min as int) as nvarchar(20)), ' - ', cast(cast(az.salary_max as int) as nvarchar(20))) end) as budget_text,
         case when fd.norm_budget_einheit = 'stunde' then fd.norm_budget_min end         as stundensatz_min,
@@ -86,6 +89,7 @@ basis as (
     left join letzter_run_quelle lq on lq.collision_code = h.collision_code
     left join {{ ref('sat_stelle__karriere') }} k          on k.hk_stelle = h.hk_stelle  and k.dss_is_current = 'Y'
     left join {{ ref('sat_stelle__karriere_text') }} kt    on kt.hk_stelle = h.hk_stelle and kt.dss_is_current = 'Y'
+    left join {{ ref('sat_stelle__karriere_detail') }} kd  on kd.hk_stelle = h.hk_stelle and kd.dss_is_current = 'Y'
     left join {{ ref('sat_stelle__theirstack') }} t        on t.hk_stelle = h.hk_stelle  and t.dss_is_current = 'Y'
     left join {{ ref('sat_stelle__theirstack_detail') }} td on td.hk_stelle = h.hk_stelle and td.dss_is_current = 'Y'
     left join {{ ref('sat_stelle__website') }} w           on w.hk_stelle = h.hk_stelle  and w.dss_is_current = 'Y'
@@ -123,11 +127,13 @@ firma_attr as (
     select h.hk_firma,
            coalesce(ft.employee_count,
                     try_cast(left(coalesce(ft.employee_count_range, k.company_size), patindex('%[^0-9]%', coalesce(ft.employee_count_range, k.company_size) + ' ') - 1) as int)) as mitarbeiter,
-           ft.industry as branche, ft.is_recruiting_agency as ist_vermittler, fd.technology_names as technologien
+           ft.industry as branche, ft.is_recruiting_agency as ist_vermittler, fd.technology_names as technologien,
+           imp.konzern_hinweis, imp.fremde_jobdomain
     from {{ ref('hub_firma') }} h
     left join {{ ref('sat_firma__theirstack') }} ft on ft.hk_firma = h.hk_firma and ft.dss_is_current = 'Y'
     left join {{ ref('sat_firma__karriere') }} k on k.hk_firma = h.hk_firma and k.dss_is_current = 'Y'
     left join {{ ref('sat_firma__theirstack_detail') }} fd on fd.hk_firma = h.hk_firma and fd.dss_is_current = 'Y'
+    left join {{ ref('sat_firma__impressum') }} imp on imp.hk_firma = h.hk_firma and imp.dss_is_current = 'Y'
 )
 
 select
@@ -149,7 +155,7 @@ select
          end                                                                            as vertragsart,
     cast(coalesce(r.ist_remote_roh, 0) as int)                                          as ist_remote,
     cast(coalesce(r.ist_hybrid_roh, 0) as int)                                          as ist_hybrid,
-    cast(null as nvarchar(10))                                                          as plz,
+    r.plz_roh                                                                           as plz,
     r.ort_roh                                                                           as ort,
     r.bundesland,
     coalesce(r.land_roh, case when r.bundesland is not null then 'AT' end)              as land,
@@ -165,7 +171,7 @@ select
          else 'unbekannt' end                                                           as region_gruppe,
     fm.master_firma_bk, fm.firma_name,
     cast(coalesce(fa.ist_vermittler, 0) as int)                                         as ist_vermittler,
-    fa.mitarbeiter, fa.branche, fa.technologien,
+    fa.mitarbeiter, fa.branche, fa.technologien, fa.konzern_hinweis, fa.fremde_jobdomain,
     r.budget_text, r.stundensatz_min, r.reaktionen,
     r.aus_projektarbeit, r.aus_projekte_suche
 from region r

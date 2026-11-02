@@ -5,6 +5,7 @@
     Lead-Typen: A1 freelancer.at | A2 Vermittler mit Vertragsart freiberuflich/projekt/befristet, karriere Projektarbeit, TheirStack __projekte |
                 C Partner (IT-Dienstleister/Beratung mit Themen-Treffer) | B1 Firmenstelle im Thema mit Interim/Karenz/Elternzeit/befristet,
                 > 45 Tage online oder neu ausgeschrieben | B2 sonst. A3 (TED) folgt mit Phase B.
+    ist_konzern: Mitarbeiter > Schwelle, Konzernhinweis oder fremde Jobdomain aus dem Impressum.
     Ausgeschlossen (bleibt mit Kennzeichen in der Tabelle): Festanstellung ueber Vermittler. Lead-Status und Sperrliste folgen mit Phase B.
     Negativbegriff im Titel: Typ- und Region-Punkte entfallen (zusaetzlich zum Abzug).
     Bausteine: p_thema (0-35), p_typ, p_region (0-20), p_frische (0-15), p_passung (0-5), p_bonus (bis +15), p_abzug (bis -25); vorscore = Summe.
@@ -116,9 +117,9 @@ punkte as (
            cast(case when b.tage_online > p.s_lange_offen or b.ist_reposted = 1 then p.b_lange_offen else 0 end
               + case when b.reaktionen is not null and b.reaktionen <= 3 then p.b_reaktionen else 0 end
               + case when coalesce(z.andere, 0) > 0 and b.thema_roh > 0 then p.b_zweite else 0 end as int) as p_bonus,
-           cast(case when b.mitarbeiter > p.s_konzern then p.a_konzern else 0 end
+           cast(case when b.mitarbeiter > p.s_konzern or b.konzern_hinweis is not null or b.fremde_jobdomain is not null then p.a_konzern else 0 end
               + case when b.negativ_titel = 1 then p.a_negativ else 0 end as int) as p_abzug,
-           cast(case when b.mitarbeiter > p.s_konzern then 1 else 0 end as int) as ist_konzern
+           cast(case when b.mitarbeiter > p.s_konzern or b.konzern_hinweis is not null or b.fremde_jobdomain is not null then 1 else 0 end as int) as ist_konzern
     from basis b
     cross join par p
     left join zweite z on z.cluster_key = b.cluster_key

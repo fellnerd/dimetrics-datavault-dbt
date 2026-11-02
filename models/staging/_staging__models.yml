@@ -123,3 +123,20 @@ models:
     description: "Base-Tabelle (incremental): Adzuna-Anzeigen aus payload.results, eine Zeile je Lauf und Anzeigen-ID, query_ids/profil_ids je Lauf."
   - name: base_lead_engine__adzuna_stelle_delta
     description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."
+
+  - name: stg_lead_engine__website_firma
+    description: "Staging Impressum der Website-Firmen (Firma je Lauf, Kollisionscode karriere/theirstack/website). Speist hub_firma und sat_firma__impressum."
+    columns: *stg_firma_columns
+  - name: stg_lead_engine__karriere_detail_stelle
+    description: "Staging karriere.at-Detailseiten je Lauf (Delta), hk_stelle wie in der karriere-Stelle."
+    columns:
+      - name: hk_stelle
+        data_tests: [not_null]
+      - name: stelle_bk
+        data_tests: [not_null]
+  - name: base_lead_engine__website_firma
+    description: "Base-Tabelle (incremental): Impressum-Felder je Lauf und Firma (nur Dateien mit mindestens einem Impressum-Feld)."
+  - name: base_lead_engine__karriere_detail
+    description: "Base-Tabelle (incremental): karriere.at-Detailseiten je Lauf und Job-ID mit voller Beschreibung."
+  - name: base_lead_engine__karriere_detail_delta
+    description: "Delta-View: nur Läufe, die der Vault noch nicht verarbeitet hat."
