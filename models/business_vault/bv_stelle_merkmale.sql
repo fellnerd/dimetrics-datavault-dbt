@@ -6,7 +6,7 @@
                   Fallback erste Sichtung (datum_geschaetzt = 1).
     ist_online: Stelle im juengsten Lauf ihrer Quelle noch gesehen; NULL fuer Adzuna (jede Anzeige nur einmal, Delta).
     Region: Ort -> Bundesland ueber ref_lead_engine__ort_name (PLZ folgt, sobald vorhanden); region_gruppe passt zu den
-            Schluesseln im Bereich 'region' der Gewichte (Kaernten, Steiermark, ..., Osttirol, Nordtirol, DACH, unbekannt).
+            Schluesseln im Bereich 'region' der Gewichte (Kärnten, Steiermark, ..., Osttirol, Tirol (= Nordtirol), DACH, unbekannt).
     Nicht enthalten (Phase B): Website-Detailtexte, Lead-Status, Firmenbuch, TED.
     Materialisierung: Tabelle statt View (Business Vault sonst virtuell): die Berechnung (viele Satelliten, Textnormalisierung) wird von
     bv_stelle_thema, bv_stelle_cluster und bv_gelegenheit_score mehrfach gebraucht und waere als View je Abfrage zu teuer.
@@ -159,14 +159,12 @@ select
     r.ort_roh                                                                           as ort,
     r.bundesland,
     coalesce(r.land_roh, case when r.bundesland is not null then 'AT' end)              as land,
-    case when r.bundesland = 'Kärnten' then 'Kaernten'
+    case when r.bundesland = 'Kärnten' then 'Kärnten'
          when r.bundesland = 'Steiermark' then 'Steiermark'
          when r.bundesland = 'Salzburg' then 'Salzburg'
          when r.bundesland = 'Tirol' and r.bezirk = 'Lienz' then 'Osttirol'
-         when r.bundesland = 'Tirol' then 'Nordtirol'
-         when r.bundesland = 'Oberösterreich' then 'Oberoesterreich'
-         when r.bundesland = 'Niederösterreich' then 'Niederoesterreich'
-         when r.bundesland in ('Wien', 'Burgenland', 'Vorarlberg') then r.bundesland
+         when r.bundesland = 'Tirol' then 'Tirol'
+         when r.bundesland in ('Oberösterreich', 'Niederösterreich', 'Wien', 'Burgenland', 'Vorarlberg') then r.bundesland
          when coalesce(r.land_roh, '') in ('DE', 'CH', 'LI') then 'DACH'
          else 'unbekannt' end                                                           as region_gruppe,
     fm.master_firma_bk, fm.firma_name,

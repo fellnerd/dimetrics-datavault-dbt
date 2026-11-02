@@ -1,38 +1,44 @@
 bereich,schluessel,punkte,bemerkung
-typ,A1,25,Auftrag direkt (freelancer.at)
-typ,A2,20,Projekt ueber Vermittler
+typ,A1,25,Auftrag direkt (freelancer.at; Projektboersen)
+typ,A2,20,Projekt ueber Vermittler (freiberuflich; Projekt; befristet)
 typ,A3,20,Oeffentliche Ausschreibung (TED)
-typ,B1,15,Ueberbrueckungsbedarf
-typ,B2,8,Bedarfssignal (Festanstellung im Thema)
-typ,C,15,Partner (IT-Dienstleister/Beratung)
-region,Kaernten,20,
-region,remote,20,
+typ,B1,15,Ueberbrueckungsbedarf: Interim; Karenz; befristet; lange offen
+typ,B2,8,Festanstellung als Bedarfssignal
+typ,C,15,Partner: IT-Dienstleister/Beratung sucht BI-Leute - Subunternehmer
+region,Kärnten,20,
+region,remote,20,aus der Ferne; Remote - gleich wie Kaernten
 region,Steiermark,15,
 region,Salzburg,15,
-region,Osttirol,15,
-region,Oberoesterreich,8,
-region,Nordtirol,8,
+region,Osttirol,15,Bezirk Lienz
+region,Oberösterreich,8,
+region,Tirol,8,Nordtirol
 region,Wien,6,
-region,Niederoesterreich,6,
+region,Niederösterreich,6,
 region,Burgenland,6,
 region,Vorarlberg,6,
-region,hybrid_bonus,4,nur Wien/NOe/Burgenland/Vorarlberg
-region,DACH,3,
+region,hybrid_bonus,4,zusaetzlich; wenn hybrid und Region < 10
+region,DACH,3,Deutschland; Schweiz; Liechtenstein
 region,unbekannt,5,
-frische,tage_3,15,
-frische,tage_7,12,
-frische,tage_14,8,
-frische,tage_30,4,
+frische,bis_3_tage,15,ab Veroeffentlichung
+frische,bis_7_tage,12,
+frische,bis_14_tage,8,
+frische,bis_30_tage,4,
 frische,aelter,0,
-thema,deckel,35,Summe gedeckelt
-thema,titel_faktor,2,Titel zaehlt doppelt
-thema,ohne_kernthema_max,20,Obergrenze ohne Kernthema im Titel
-passung,stundensatz_ab_60,3,Stundensatz ab 60 EUR oder Budget genannt
-passung,firmengroesse_20_500,2,
-bonus,lange_offen,5,mehr als 45 Tage online oder neu ausgeschrieben
-bonus,reaktionen_max_3,5,hoechstens 3 Reaktionen
-bonus,zweite_gelegenheit,5,zweite relevante Gelegenheit derselben Firma in 60 Tagen
+thema,deckel,35,Hoechstpunkte Thema
+thema,titel_faktor,2,Treffer im Titel zaehlt mehrfach
+thema,max_ohne_kern_im_titel,20,ohne Kernthema im Titel hoechstens
+passung,satz_ab_60_eur_h,3,Stundensatz ab 60 EUR oder Budget genannt
+passung,groesse_20_500,2,Firmengroesse 20-500
+bonus,lange_offen_45_tage,5,oder neu ausgeschrieben
+bonus,wenig_reaktionen_max_3,5,freelancer.at
+bonus,zweites_signal_60_tage,5,zweite relevante Gelegenheit derselben Firma
 abzug,konzern,-10,Konzern oder Konzerntochter
-abzug,negativ_titel,-15,Negativbegriff im Titel
-schwelle,lange_offen_tage,45,
-schwelle,konzern_mitarbeiter,2500,
+abzug,negativ_im_titel,-15,
+schwelle,A,55,Tagesliste Abschnitt A ab
+schwelle,B,60,
+schwelle,C,50,
+anzahl,A,8,hoechstens je Tagesliste
+anzahl,B,8,
+anzahl,C,3,
+parameter,lange_offen_tage,45,Tage online fuer lange offen (nicht im Sheet)
+parameter,konzern_mitarbeiter,2500,Mitarbeiter ab denen Konzern gilt (nicht im Sheet)

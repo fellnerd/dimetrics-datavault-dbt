@@ -8,6 +8,7 @@
     ist_konzern: Mitarbeiter > Schwelle, Konzernhinweis oder fremde Jobdomain aus dem Impressum.
     Ausgeschlossen (bleibt mit Kennzeichen in der Tabelle): Festanstellung ueber Vermittler. Lead-Status und Sperrliste folgen mit Phase B.
     Negativbegriff im Titel: Typ- und Region-Punkte entfallen (zusaetzlich zum Abzug).
+    Hybrid-Bonus: wenn hybrid und die Region unter 10 Punkten liegt (Gewichte-Blatt).
     Bausteine: p_thema (0-35), p_typ, p_region (0-20), p_frische (0-15), p_passung (0-5), p_bonus (bis +15), p_abzug (bis -25); vorscore = Summe.
     Version: 2026-10-26 V1.0 Erste Fassung
 #}
@@ -17,16 +18,16 @@ with par as (   -- skalare Parameter aus den Gewichten
     select
         max(case when bereich = 'thema'   and schluessel = 'deckel'              then punkte end) as thema_deckel,
         max(case when bereich = 'thema'   and schluessel = 'titel_faktor'        then punkte end) as titel_faktor,
-        max(case when bereich = 'thema'   and schluessel = 'ohne_kernthema_max'  then punkte end) as ohne_kern_max,
-        max(case when bereich = 'passung' and schluessel = 'stundensatz_ab_60'   then punkte end) as p_stundensatz,
-        max(case when bereich = 'passung' and schluessel = 'firmengroesse_20_500' then punkte end) as p_groesse,
-        max(case when bereich = 'bonus'   and schluessel = 'lange_offen'         then punkte end) as b_lange_offen,
-        max(case when bereich = 'bonus'   and schluessel = 'reaktionen_max_3'    then punkte end) as b_reaktionen,
-        max(case when bereich = 'bonus'   and schluessel = 'zweite_gelegenheit'  then punkte end) as b_zweite,
+        max(case when bereich = 'thema'   and schluessel = 'max_ohne_kern_im_titel' then punkte end) as ohne_kern_max,
+        max(case when bereich = 'passung' and schluessel = 'satz_ab_60_eur_h'      then punkte end) as p_stundensatz,
+        max(case when bereich = 'passung' and schluessel = 'groesse_20_500'        then punkte end) as p_groesse,
+        max(case when bereich = 'bonus'   and schluessel = 'lange_offen_45_tage'  then punkte end) as b_lange_offen,
+        max(case when bereich = 'bonus'   and schluessel = 'wenig_reaktionen_max_3' then punkte end) as b_reaktionen,
+        max(case when bereich = 'bonus'   and schluessel = 'zweites_signal_60_tage' then punkte end) as b_zweite,
         max(case when bereich = 'abzug'   and schluessel = 'konzern'             then punkte end) as a_konzern,
-        max(case when bereich = 'abzug'   and schluessel = 'negativ_titel'       then punkte end) as a_negativ,
-        max(case when bereich = 'schwelle' and schluessel = 'lange_offen_tage'   then punkte end) as s_lange_offen,
-        max(case when bereich = 'schwelle' and schluessel = 'konzern_mitarbeiter' then punkte end) as s_konzern,
+        max(case when bereich = 'abzug'   and schluessel = 'negativ_im_titel'      then punkte end) as a_negativ,
+        max(case when bereich = 'parameter' and schluessel = 'lange_offen_tage'   then punkte end) as s_lange_offen,
+        max(case when bereich = 'parameter' and schluessel = 'konzern_mitarbeiter' then punkte end) as s_konzern,
         max(case when bereich = 'region'  and schluessel = 'hybrid_bonus'        then punkte end) as r_hybrid
     from {{ ref('ref_lead_engine__gewicht') }}
 ),
@@ -105,13 +106,13 @@ punkte as (
            cast(case when b.negativ_titel = 1 then 0 else (select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'typ' and g.schluessel = b.lead_typ) end as int) as p_typ,
            cast(case when b.negativ_titel = 1 then 0 when b.ist_remote = 1 then (select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = 'remote')
                      else coalesce((select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = b.region_gruppe), 0)
-                          + case when b.ist_hybrid = 1 and b.region_gruppe in ('Wien', 'Niederoesterreich', 'Burgenland', 'Vorarlberg') then p.r_hybrid else 0 end
+                          + case when b.ist_hybrid = 1 and coalesce((select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = b.region_gruppe), 0) < 10 then p.r_hybrid else 0 end
                 end as int) as p_region,
            cast(coalesce((select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'frische' and g.schluessel =
-                    case when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 3 then 'tage_3'
-                         when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 7 then 'tage_7'
-                         when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 14 then 'tage_14'
-                         when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 30 then 'tage_30' else 'aelter' end), 0) as int) as p_frische,
+                    case when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 3 then 'bis_3_tage'
+                         when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 7 then 'bis_7_tage'
+                         when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 14 then 'bis_14_tage'
+                         when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 30 then 'bis_30_tage' else 'aelter' end), 0) as int) as p_frische,
            cast(case when b.stundensatz_min >= 60 or b.budget_text is not null then p.p_stundensatz else 0 end
               + case when b.mitarbeiter between 20 and 500 then p.p_groesse else 0 end as int) as p_passung,
            cast(case when b.tage_online > p.s_lange_offen or b.ist_reposted = 1 then p.b_lange_offen else 0 end
