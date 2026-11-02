@@ -73,6 +73,16 @@ firmenbuch as (   -- FN, Rechtsform, Sitz und juengstes Firmenbuch-Signal je Mas
     group by f.master_firma_bk
 ),
 
+ki_firma as (   -- KI-Urteile der Gelegenheiten der Firma (juengstes Urteil je Gelegenheit, live aus der Eingangstabelle)
+    select g.master_firma_bk, min(k.ki_einstufung) as ki_einstufung_beste, sum(case when k.ki_einstufung = 'A' then 1 else 0 end) as ki_anzahl_a
+    from g
+    join (select x.gelegenheit_id, x.ki_einstufung
+          from (select k0.*, row_number() over (partition by k0.gelegenheit_id order by k0.bewertet_am desc, k0.bewertung_id desc) as rn
+                from {{ source('lead_engine', 'lead_engine_ki_bewertung') }} k0) x
+          where x.rn = 1) k on k.gelegenheit_id = g.cluster_key collate database_default
+    group by g.master_firma_bk
+),
+
 abschluss as (   -- Kennzahlen des juengsten Jahresabschlusses je Master (ueber alle Firmen des Masters)
     select x.*
     from (select f.master_firma_bk, ja.stichtag, ja.groessenklasse, ja.bilanzsumme, ja.umsatzerloese, ja.eigenkapital, ja.jahresergebnis,
@@ -115,6 +125,7 @@ select
     jf.erste_sichtung, jf.letzte_sichtung,
     t.gelegenheiten                                                                 as beste_gelegenheiten,
     fbk.ereignis_text                                                               as firmenbuch_ereignisse,
+    kf.ki_einstufung_beste, coalesce(kf.ki_anzahl_a, 0)                             as ki_anzahl_a,
     (select top 1 s2.status from {{ ref('ref_lead_engine__lead_status') }} s2
       where s2.firma_norm <> '' and s2.firma_norm = (select top 1 f.name_norm from {{ ref('bv_firma_same_as') }} f where f.master_firma_bk = b.master_firma_bk and f.name_norm <> '')
       order by s2.datum desc)                                                       as status,
@@ -129,4 +140,5 @@ left join regionen rg on rg.master_firma_bk = b.master_firma_bk
 left join titel t on t.master_firma_bk = b.master_firma_bk
 left join firmenbuch fbk on fbk.master_firma_bk = b.master_firma_bk
 left join abschluss ab on ab.master_firma_bk = b.master_firma_bk
+left join ki_firma kf on kf.master_firma_bk = b.master_firma_bk
 where b.rn = 1

@@ -200,6 +200,20 @@ models:
         description: "Lead-Status aus dem Suchprofil (beworben, kontaktiert, kein Fit, erledigt, offen). Leer = noch nicht bearbeitet."
       - name: status_am
         description: "Datum des Lead-Status."
+      - name: ki_einstufung
+        description: "Einstufung im jüngsten KI-Urteil: A (sofort angehen), B (interessant), C (beobachten), X (nicht passend). Leer = noch nicht bewertet. Live aus der Eingangstabelle gelesen."
+      - name: ki_score
+        description: "Score 0–100 im jüngsten KI-Urteil."
+      - name: ki_begruendung
+        description: "Begründung des KI-Urteils (Text)."
+      - name: ki_anlass
+        description: "Anlass bzw. Auslöser laut KI-Urteil (z. B. Frist, Neuausschreibung, Signal im Firmenbuch)."
+      - name: ki_naechster_schritt
+        description: "Empfohlener nächster Schritt: bewerben, anschreiben, linkedin, partner_fragen, beobachten, nichts."
+      - name: ki_baustein
+        description: "Textbaustein der KI für die Ansprache (Entwurf)."
+      - name: ki_bewertet_am
+        description: "Zeitpunkt des KI-Urteils (UTC)."
 
   - name: lead_firmen_v
     description: |
@@ -276,3 +290,90 @@ models:
         description: "Lead-Status der Firma aus dem Suchprofil (beworben, kontaktiert, kein Fit, erledigt). Leer = unbearbeitet."
       - name: status_am
         description: "Datum des Lead-Status."
+      - name: ki_einstufung_beste
+        description: "Beste KI-Einstufung (A vor B vor C vor X) über die bewerteten Gelegenheiten der Firma. Leer, wenn keine bewertet ist."
+      - name: ki_anzahl_a
+        description: "Zahl der Gelegenheiten der Firma mit KI-Einstufung A."
+
+  - name: lead_ki_offen_v
+    description: |
+      Arbeitsliste für die KI-Bewertung: Gelegenheiten mit Vorscore ab 40, die noch kein KI-Urteil haben (grund 'neu') oder seit dem letzten
+      Urteil inhaltlich geändert wurden (grund 'geaendert'); ohne Status kein fit/erledigt. Nach vorscore absteigend abrufen. Blättern über gelegenheit_id.
+    columns:
+      - name: gelegenheit_id
+        description: "Eindeutiger Schlüssel der Gelegenheit (Text); derselbe wie in lead_gelegenheiten_v. Damit das Urteil in die Eingangstabelle schreiben."
+        data_tests: [not_null, unique]
+      - name: vorscore
+        description: "Vorbewertung 0–100 (siehe lead_gelegenheiten_v)."
+        data_tests: [not_null]
+      - name: lead_typ
+        description: "Art des Leads: A1 freelancer.at | A2 Projekt über Vermittler | A3 Ausschreibung (TED) | B1 Überbrückungsbedarf | B2 sonstige Firmenstelle | C Partner."
+      - name: titel
+        description: "Stellen- bzw. Auftragstitel."
+      - name: url
+        description: "Link zur Anzeige."
+      - name: text
+        description: "Beschreibungstext der Anzeige (auf 4.000 Zeichen gekürzt). Kann leer sein."
+      - name: firma_name
+        description: "Name der Firma (Arbeitgeber/Auftraggeber)."
+      - name: firma_id
+        description: "Schlüssel der Firma wie in lead_firmen_v (Text). Leer bei Gelegenheiten ohne bekannte Firma."
+      - name: ort
+        description: "Arbeitsort laut Anzeige."
+      - name: bundesland
+        description: "Bundesland des Arbeitsorts; leer, wenn nicht bestimmbar."
+      - name: ist_remote
+        description: "1 = Remote laut Anzeige, sonst 0."
+      - name: veroeffentlicht_am
+        description: "Veröffentlichungsdatum (ersatzweise erste Sichtung)."
+      - name: begruendung_kurz
+        description: "Kurze Begründung des Vorscores."
+      - name: p_thema
+        description: "Baustein Thema 0–35."
+      - name: p_typ
+        description: "Baustein Lead-Typ."
+      - name: p_region
+        description: "Baustein Region 0–20."
+      - name: p_frische
+        description: "Baustein Frische 0–15."
+      - name: p_passung
+        description: "Baustein Passung 0–5 (Stundensatz/Budget, Firmengröße)."
+      - name: p_bonus
+        description: "Baustein Bonus bis +15."
+      - name: p_abzug
+        description: "Baustein Abzug bis -25."
+      - name: groesse
+        description: "Größenklasse nach Mitarbeitern: 'unter 20', '20-500', '501-2500', 'ueber 2500'. Leer, wenn unbekannt."
+      - name: ist_konzern
+        description: "1 = Konzern oder Konzerntochter, sonst 0."
+      - name: groessenklasse
+        description: "Größenklasse laut jüngstem Jahresabschluss: klein, mittel, gross; 'unbekannt' bei sonstigen Codes. Leer ohne Jahresabschluss."
+      - name: groessenklasse_code
+        description: "Code aus den Metadaten des Jahresabschlusses (K klein, M mittel, G groß; W und N ungeklärt, werden neutral bewertet)."
+      - name: abschluss_stichtag
+        description: "Stichtag des jüngsten Jahresabschlusses."
+      - name: bilanzsumme
+        description: "Bilanzsumme in EUR."
+      - name: umsatzerloese
+        description: "Umsatzerlöse in EUR; nur bei mittleren und großen Firmen offengelegt."
+      - name: eigenkapital
+        description: "Eigenkapital in EUR."
+      - name: jahresergebnis
+        description: "Jahresüberschuss bzw. -fehlbetrag in EUR; nur bei mittleren und großen Firmen offengelegt."
+      - name: mitarbeiter_abschluss
+        description: "Durchschnittliche Mitarbeiterzahl laut Anhang; nur bei kleinen Firmen offengelegt."
+      - name: fn
+        description: "Firmenbuchnummer (ohne führende Nullen). Leer, wenn nicht sicher zugeordnet."
+      - name: rechtsform
+        description: "Rechtsform laut Firmenbuch."
+      - name: firmenbuch_sitz
+        description: "Sitz laut Firmenbuch."
+      - name: firmenbuch_ereignisse
+        description: "Jüngste Veränderung im Firmenbuch als Text. Leer, wenn keine bekannt."
+      - name: grund
+        description: "Warum die Gelegenheit offen ist: 'neu' (noch kein Urteil) oder 'geaendert' (Inhalt seit dem letzten Urteil geändert)."
+        data_tests: [not_null, {accepted_values: {arguments: {values: ['neu', 'geaendert']}}}]
+      - name: ki_bisherige_einstufung
+        description: "Einstufung im letzten KI-Urteil (bei grund 'geaendert'); sonst leer."
+      - name: ki_bewertet_am
+        description: "Zeitpunkt des letzten KI-Urteils (UTC); sonst leer."

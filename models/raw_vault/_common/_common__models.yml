@@ -154,3 +154,21 @@ models:
   - name: sat_firma__jahresabschluss
     description: "Kennzahlen des juengsten Jahresabschlusses aus dem Firmenbuch: Stichtag, Einreichung, Groessenklasse, Bilanzsumme, Umsatzerloese, Eigenkapital, Jahresergebnis, durchschnittliche Mitarbeiterzahl (Umsatz, Ergebnis, Mitarbeiter nur wenn offengelegt)."
     columns: *sat_firma_columns
+
+  - name: hub_gelegenheit
+    description: "Hub Gelegenheit (Cluster derselben Stelle aus mehreren Quellen; BK = gelegenheit_id aus lead_gelegenheiten_v). Haelt die KI-bewerteten Gelegenheiten."
+    columns:
+      - name: hk_gelegenheit
+        data_type: "CHAR(64)"
+        data_tests: [not_null, unique]
+      - name: gelegenheit_bk
+        data_tests: [not_null]
+      - name: dss_business_key
+        data_tests: [not_null]
+  - name: sat_gelegenheit__ki_bewertung
+    description: "KI-Urteile je Gelegenheit (Einstufung, Score, Begruendung, Anlass, naechster Schritt, Baustein, Modell, Lauf); alle Urteile bleiben erhalten, dss_is_current = juengstes."
+    columns:
+      - name: hk_gelegenheit
+        data_tests: [not_null]
+      - name: hashdiff
+        data_tests: [not_null]

@@ -199,3 +199,10 @@ models:
               config: {severity: warn}
   - name: base_lead_engine__firmenbuch_jahresabschluss_firma
     description: "Sicht: Jahresabschluss-Kennzahlen (jüngster Stichtag je FN), zugeordnet zu den Firmen der Lead-Engine über die FN."
+  - name: stg_lead_engine__ki_bewertung
+    description: "Staging KI-Bewertung: ein Urteil je Zeile (Eingangstabelle landing.lead_engine_ki_bewertung). Speist hub_gelegenheit und sat_gelegenheit__ki_bewertung."
+    columns:
+      - name: hk_gelegenheit
+        data_tests: [not_null]
+  - name: base_lead_engine__ki_bewertung
+    description: "Sicht auf die Eingangstabelle der KI-Bewertung (darf leer sein)."

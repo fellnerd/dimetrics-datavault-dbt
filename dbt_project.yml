@@ -8,6 +8,8 @@ profile: 'datavault'
 # Ohne Eintraege in var ols_view_grants ein No-op. Ladeprotokoll optional aktivieren:
 #   einmalig `dbt run-operation create_load_status_table`, dann hier
 #   - "{{ log_load_status(results) }}" ergaenzen.
+on-run-start:
+  - "{{ lead_engine_ki_bewertung_tabelle() }}"
 on-run-end:
   - "{{ grant_select_on_views() }}"
 

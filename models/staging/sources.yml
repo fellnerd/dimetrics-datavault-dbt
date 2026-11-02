@@ -14,5 +14,27 @@ sources:
       - name: lead_engine_datei
         description: Eine Zeile je Landing-Datei des Lead-Engine-Collectors (schema lead-engine.landing.v1)
         loaded_at_field: fetched_at
+      - name: lead_engine_ki_bewertung
+        description: Eingang der KI-Bewertung (Skill lead-bewertung schreibt ueber den MCP, nur Einfuegen); angelegt vom on-run-start-Hook lead_engine_ki_bewertung_tabelle
+        columns:
+          - name: bewertung_id
+            data_tests: [unique, not_null]
+          - name: gelegenheit_id
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments: {to: ref('lead_gelegenheiten_v'), field: gelegenheit_id}
+                  config: {severity: warn}
+          - name: ki_einstufung
+            data_tests:
+              - not_null
+              - accepted_values: {arguments: {values: ['A', 'B', 'C', 'X']}}
+          - name: ki_score
+            data_tests:
+              - not_null
+              - dbt_utils.accepted_range: {arguments: {min_value: 0, max_value: 100}}
+          - name: ki_naechster_schritt
+            data_tests:
+              - accepted_values: {arguments: {values: ['bewerben', 'anschreiben', 'linkedin', 'partner_fragen', 'beobachten', 'nichts']}}
       - name: lead_engine_lauf
         description: Laufprotokolle des Collectors (schema lead-engine.run.v1)

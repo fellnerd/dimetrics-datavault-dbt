@@ -8,11 +8,19 @@
                (Seed-Startwerte, ueberschrieben durch die Gewichte aus der Landing-Quelle suchprofil).
     Status: Lead-Status aus dem Suchprofil (juengster Eintrag zur gelegenheit_id); beworben/kontaktiert/kein Fit/erledigt und
             Sperrliste schliessen die Gelegenheit aus (bleibt mit Grund in bv_gelegenheit_score).
+    KI-Urteil: ki_* aus landing.lead_engine_ki_bewertung (juengstes Urteil je gelegenheit_id, live gelesen).
     Noch offen: Firmenbuch, Website-Detailtexte; Website-Stellen haben noch keinen Ort.
     Quellen: bv_gelegenheit_score
     Version: 2026-10-26 V1.0 Erste Fassung
 #}
 {{ config(materialized='view', tags=['report']) }}
+
+with ki as (   -- juengstes KI-Urteil je Gelegenheit, live aus der Eingangstabelle (nicht materialisiert: Urteile von 06:30 sofort sichtbar)
+    select x.*
+    from (select k.*, row_number() over (partition by k.gelegenheit_id order by k.bewertet_am desc, k.bewertung_id desc) as rn
+          from {{ source('lead_engine', 'lead_engine_ki_bewertung') }} k) x
+    where x.rn = 1
+)
 
 select
     s.cluster_key                                                                as gelegenheit_id,
@@ -34,8 +42,11 @@ select
     s.ort, s.plz, s.bundesland, s.ist_remote, s.ist_hybrid,
     s.vertragsart, s.veroeffentlicht_am, s.datum_geschaetzt, s.tage_online, s.reaktionen,
     s.budget_text                                                                as budget,
-    s.status, s.status_am
+    s.status, s.status_am,
+    ki.ki_einstufung, ki.ki_score, ki.ki_begruendung, ki.ki_anlass, ki.ki_naechster_schritt, ki.ki_baustein,
+    ki.bewertet_am                                                               as ki_bewertet_am
 from {{ ref('bv_gelegenheit_score') }} s
+left join ki on ki.gelegenheit_id = s.cluster_key collate database_default
 where s.ausgeschlossen = 0
   and (s.veroeffentlicht_am >= dateadd(day, -30, cast(getdate() as date))
        or s.letzte_sichtung >= dateadd(day, -30, cast(getdate() as date)))
