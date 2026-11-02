@@ -179,3 +179,23 @@ models:
     description: "Base-Tabelle (incremental): Veränderungen im Firmenbuch je Lauf, Zeitraum und FN (Anzahl, jüngstes Datum, Arten)."
   - name: base_lead_engine__firmenbuch_ereignis
     description: "Sicht: Veränderungen im Firmenbuch, zugeordnet zu den Firmen der Lead-Engine über die FN."
+  - name: stg_lead_engine__firmenbuch_jahresabschluss
+    description: "Staging Jahresabschluss-Kennzahlen je Firma (jüngster Stichtag je FN, FN aus sicherer Zuordnung oder Impressum)."
+    columns:
+      - name: hk_firma
+        data_tests: [not_null]
+  - name: base_lead_engine__firmenbuch_jahresabschluss
+    description: "Base-Tabelle (incremental): Kennzahlen des Jahresabschlusses je Lauf, FN und Stichtag (ohne Bilanz-XML und Personen)."
+    columns:
+      - name: fn
+        data_tests: [not_null]
+      - name: stichtag
+        data_tests: [not_null]
+      - name: groessenklasse_code
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['K', 'M', 'G', 'W']
+              config: {severity: warn}
+  - name: base_lead_engine__firmenbuch_jahresabschluss_firma
+    description: "Sicht: Jahresabschluss-Kennzahlen (jüngster Stichtag je FN), zugeordnet zu den Firmen der Lead-Engine über die FN."

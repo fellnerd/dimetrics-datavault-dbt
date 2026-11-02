@@ -7,7 +7,8 @@
            Technologien. Ersetzt nach Umstellung des Skills lead_kandidaten_v.
     Schluessel: firma_id (varchar, Hash des Masters) statt bigint (das MCP-Blaettern scheitert an grossen bigint-Schluesseln).
     Firmenbuch: fn, rechtsform, firmenbuch_sitz und firmenbuch_ereignisse (juengste Veraenderung im Firmenbuch) aus sat_firma__firmenbuch(_ereignis).
-    Offen: Funktionstraeger (die Quelle liefert keinen Auszug).
+    Jahresabschluss: groessenklasse, abschluss_stichtag, bilanzsumme, umsatzerloese, eigenkapital, jahresergebnis, mitarbeiter_abschluss (nur Kennzahlen; Umsatz,
+    Ergebnis und Mitarbeiter nur wenn offengelegt) aus sat_firma__jahresabschluss.
     Quellen: bv_gelegenheit_score, bv_stelle_cluster, bv_stelle_thema
     Version: 2026-11-02 V1.0 Erste Fassung
 #}
@@ -72,6 +73,17 @@ firmenbuch as (   -- FN, Rechtsform, Sitz und juengstes Firmenbuch-Signal je Mas
     group by f.master_firma_bk
 ),
 
+abschluss as (   -- Kennzahlen des juengsten Jahresabschlusses je Master (ueber alle Firmen des Masters)
+    select x.*
+    from (select f.master_firma_bk, ja.stichtag, ja.groessenklasse, ja.bilanzsumme, ja.umsatzerloese, ja.eigenkapital, ja.jahresergebnis,
+                 ja.mitarbeiter_durchschnitt,
+                 row_number() over (partition by f.master_firma_bk order by ja.stichtag desc, f.hk_firma) as rn
+          from {{ ref('bv_firma_same_as') }} f
+          join {{ ref('sat_firma__jahresabschluss') }} ja on ja.hk_firma = f.hk_firma and ja.dss_is_current = 'Y'
+          where f.master_firma_bk in (select master_firma_bk from je_firma)) x
+    where x.rn = 1
+),
+
 titel as (   -- die besten Gelegenheiten der Firma als Text
     select x.master_firma_bk,
            left(string_agg(cast(concat(x.titel, ' [', x.lead_typ, ' ', x.vorscore, ']') as nvarchar(max)), ' | ')
@@ -96,6 +108,9 @@ select
     b.mitarbeiter, jf.ist_konzern, jf.ist_vermittler,
     b.branche, b.technologien,
     fbk.fn, fbk.rechtsform, fbk.sitz                                                as firmenbuch_sitz,
+    ab.groessenklasse, ab.stichtag                                                  as abschluss_stichtag,
+    ab.bilanzsumme, ab.umsatzerloese, ab.eigenkapital, ab.jahresergebnis,
+    ab.mitarbeiter_durchschnitt                                                     as mitarbeiter_abschluss,
     q.quellen,
     jf.erste_sichtung, jf.letzte_sichtung,
     t.gelegenheiten                                                                 as beste_gelegenheiten,
@@ -113,4 +128,5 @@ left join quellen q on q.master_firma_bk = b.master_firma_bk
 left join regionen rg on rg.master_firma_bk = b.master_firma_bk
 left join titel t on t.master_firma_bk = b.master_firma_bk
 left join firmenbuch fbk on fbk.master_firma_bk = b.master_firma_bk
+left join abschluss ab on ab.master_firma_bk = b.master_firma_bk
 where b.rn = 1

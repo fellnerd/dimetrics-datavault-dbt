@@ -151,3 +151,6 @@ models:
   - name: sat_firma__firmenbuch_ereignis
     description: "Signal-Satellit: Veränderungen im Firmenbuch je Firma und Zeitraum (Anzahl, jüngstes Datum, jüngste Art, Arten)."
     columns: *sat_firma_columns
+  - name: sat_firma__jahresabschluss
+    description: "Kennzahlen des juengsten Jahresabschlusses aus dem Firmenbuch: Stichtag, Einreichung, Groessenklasse, Bilanzsumme, Umsatzerloese, Eigenkapital, Jahresergebnis, durchschnittliche Mitarbeiterzahl (Umsatz, Ergebnis, Mitarbeiter nur wenn offengelegt)."
+    columns: *sat_firma_columns

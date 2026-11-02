@@ -113,35 +113,166 @@ models:
 
   - name: lead_gelegenheiten_v
     description: |
-      Publizierte View: 1 Zeile je Gelegenheit (Cluster derselben Stelle über mehrere Quellen), veröffentlicht oder zuletzt gesehen in den
-      letzten 30 Tagen, ohne Festanstellung über Vermittler. Lead-Typ, Vorscore und alle Bausteine, Text, Firma, Ort, Konditionen.
-      Erste Fassung ohne FN, Detailtexte, Lead-Status, Sperrliste, TED, Firmenbuch.
+      Tagesliste der Lead-Engine: 1 Zeile je Gelegenheit (dieselbe Stelle aus mehreren Quellen ist zu einer Zeile zusammengefasst), veröffentlicht
+      oder zuletzt gesehen in den letzten 30 Tagen, ohne Festanstellung über Vermittler und ohne gesperrte oder bereits bearbeitete Leads.
+      Sortieren nach vorscore absteigend. Blättern über gelegenheit_id (varchar, eindeutig).
     columns:
+      - name: gelegenheit_id
+        description: "Eindeutiger Schlüssel der Gelegenheit (Text, stabil). Zum Blättern und für den Lead-Status im Suchprofil verwenden."
+        data_tests: [not_null, unique]
       - name: gelegenheit_key
+        description: "Zweiter eindeutiger Schlüssel als Text (Hash von gelegenheit_id); nur für Verbindungen zu älteren Abfragen, sonst gelegenheit_id nehmen."
         data_tests: [not_null, unique]
       - name: lead_typ
+        description: "Art des Leads: A1 Auftrag auf freelancer.at | A2 Projekt über Vermittler (freiberuflich/projekt/befristet) | A3 öffentliche Ausschreibung (TED) | B1 Firmenstelle mit Überbrückungsbedarf (Interim, Karenz, befristet, lange offen) | B2 sonstige Firmenstelle (Festanstellung als Bedarfssignal) | C Partner (IT-Dienstleister/Beratung sucht Fachleute, Subunternehmer)."
         data_tests:
           - not_null
           - accepted_values:
               arguments:
                 values: ['A1', 'A2', 'A3', 'B1', 'B2', 'C']
       - name: vorscore
+        description: "Vorbewertung 0–100 (Summe der Bausteine p_thema bis p_abzug; kann durch Abzüge unter 0 fallen, Minimum -25). Ab ca. 55 für die Tagesliste interessant (A ab 55, B ab 60, C ab 50)."
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
               arguments:
                 min_value: -25
                 max_value: 100
+      - name: p_thema
+        description: "Baustein Thema, 0–35: Passung zu den Kernthemen (Datenplattform, BI und Reporting, KI, Controlling); Treffer im Titel zählen doppelt. Ohne Kernthema im Titel höchstens 20."
+      - name: p_typ
+        description: "Baustein Lead-Typ (A1 25, A2/A3 20, B1/C 15, B2 8). 0, wenn kein Kernthema im Titel trifft oder ein Negativbegriff im Titel steht."
+      - name: p_region
+        description: "Baustein Region, 0–20 (Kärnten und remote 20, Steiermark/Salzburg/Osttirol 15, übrige Bundesländer 6–8, DACH 3, unbekannt 5; hybrid +4 bei unter 10). 0 ohne Kernthema im Titel."
+      - name: p_frische
+        description: "Baustein Frische, 0–15: bis 3 Tage nach Veröffentlichung 15, bis 7 Tage 12, bis 14 Tage 8, bis 30 Tage 4, älter 0."
+      - name: p_passung
+        description: "Baustein Passung, 0–5: Stundensatz ab 60 EUR oder Budget genannt (+3), Firmengröße 20–500 Mitarbeiter oder Größenklasse klein/mittel laut Jahresabschluss (+2)."
+      - name: p_bonus
+        description: "Baustein Bonus, bis +15: lange offen (über 45 Tage) oder neu ausgeschrieben +5, höchstens 3 Reaktionen (freelancer.at) +5, zweite relevante Gelegenheit derselben Firma in 60 Tagen +5."
+      - name: p_abzug
+        description: "Baustein Abzug, bis -25: Konzern oder Konzerntochter -10, Negativbegriff im Titel -15."
+      - name: begruendung_kurz
+        description: "Kurze Begründung der Bewertung in einer Zeile (Themen-Treffer, Region, Alter, Reaktionen, Konzern, Negativbegriff)."
+      - name: themen
+        description: "Gefundene Themen mit Begriff, z. B. 'BI und Reporting: power bi (Titel)'; (Titel) = Treffer im Stellentitel. Leer ohne Treffer."
+      - name: titel
+        description: "Stellentitel bzw. Auftragstitel der Anzeige."
+      - name: text
+        description: "Beschreibungstext der Anzeige (auf 4.000 Zeichen gekürzt; aus Detailseite, Auftragsbeschreibung oder Kurztext, je nach Quelle). Kann leer sein."
+      - name: url
+        description: "Link zur Anzeige bzw. zum Auftrag."
+      - name: quellen
+        description: "Quellen, in denen die Gelegenheit gefunden wurde (karriere, theirstack, website, freelancer, adzuna, ted), kommagetrennt."
+      - name: firma_name
+        description: "Name der Firma (Arbeitgeber/Auftraggeber). Bei TED der Auftraggeber, bei freelancer.at meist leer oder 'UNKNOWN'."
+      - name: ist_konzern
+        description: "1 = Konzern oder Konzerntochter (über 2.500 Mitarbeiter, Konzernhinweis oder fremde Jobdomain im Impressum), sonst 0."
+      - name: groesse
+        description: "Größenklasse nach Mitarbeitern: 'unter 20', '20-500', '501-2500', 'ueber 2500'. Leer, wenn die Mitarbeiterzahl unbekannt ist."
+      - name: mitarbeiter
+        description: "Zahl der Mitarbeiter der Firma (aus TheirStack bzw. karriere.at; teils als Untergrenze der Spanne). Leer, wenn unbekannt."
+      - name: technologien
+        description: "Technologien der Firma laut TheirStack (kommagetrennt). Oft leer."
+      - name: ort
+        description: "Arbeitsort der Stelle (Text aus der Anzeige). Leer bei vielen Website-Stellen."
+      - name: plz
+        description: "Postleitzahl des Arbeitsorts, wenn bekannt (oft leer)."
+      - name: bundesland
+        description: "Bundesland des Arbeitsorts (abgeleitet aus Ort/PLZ); leer, wenn nicht bestimmbar."
+      - name: ist_remote
+        description: "1 = reine Remote-Arbeit laut Anzeige, sonst 0."
+      - name: ist_hybrid
+        description: "1 = hybrides Arbeiten (Büro und Remote) laut Anzeige, sonst 0."
+      - name: vertragsart
+        description: "Vertragsart laut Anzeige: freiberuflich, projekt, befristet, unbefristet/vollzeit u. a. Leer, wenn nicht angegeben."
+      - name: veroeffentlicht_am
+        description: "Veröffentlichungsdatum der Anzeige; bei datum_geschaetzt = 1 ersatzweise das Datum der ersten Sichtung."
+      - name: datum_geschaetzt
+        description: "1 = veroeffentlicht_am ist geschätzt (erste Sichtung), 0 = Datum aus der Anzeige."
+      - name: tage_online
+        description: "Tage, die die Anzeige zwischen Veröffentlichung und letzter Sichtung online war."
+      - name: reaktionen
+        description: "Zahl der Reaktionen/Angebote auf einen Auftrag (nur freelancer.at); leer bei anderen Quellen."
+      - name: budget
+        description: "Budget bzw. Gehalt als Text laut Anzeige (z. B. '50–70 EUR/h'). Leer, wenn nicht genannt."
+      - name: status
+        description: "Lead-Status aus dem Suchprofil (beworben, kontaktiert, kein Fit, erledigt, offen). Leer = noch nicht bearbeitet."
+      - name: status_am
+        description: "Datum des Lead-Status."
 
   - name: lead_firmen_v
     description: |
-      Publizierte View: 1 Zeile je Master-Firma (bv_firma_same_as) mit mindestens einer Gelegenheit in den letzten 30 Tagen: bester Vorscore,
-      Zahl der Gelegenheiten (ab 40), Themen, Regionen, Größe, Konzern, Technologien, Quellen. firma_id ist varchar. Firmenbuch-Ereignisse
-      und Status folgen (Phase B).
+      Firmenblick: 1 Zeile je Firma (quellenübergreifend zusammengeführt) mit mindestens einer Gelegenheit in den letzten 30 Tagen. Zeigt den besten
+      Vorscore, Zahl der Gelegenheiten, Themen, Regionen, Größe sowie Firmenbuch-Daten (FN, Rechtsform, Sitz, Veränderungen) und Kennzahlen des
+      Jahresabschlusses. Blättern über firma_id (varchar, eindeutig).
     columns:
       - name: firma_id
+        description: "Eindeutiger Schlüssel der Firma (Text, Hash von master_firma_bk). Zum Blättern und für den Lead-Status verwenden."
         data_tests: [not_null, unique]
       - name: master_firma_bk
+        description: "Fachlicher Schlüssel der zusammengeführten Firma: 'fn:<Firmenbuchnummer>' | 'd:<Domain>' | 'n:<normierter Name>' | '<quelle>:<id>'."
         data_tests: [not_null, unique]
+      - name: firma_name
+        description: "Name der Firma (aus der Gelegenheit mit dem besten Vorscore)."
       - name: bester_vorscore
+        description: "Höchster Vorscore (0–100) der Gelegenheiten der Firma."
         data_tests: [not_null]
+      - name: bester_lead_typ
+        description: "Lead-Typ der besten Gelegenheit (A1, A2, A3, B1, B2, C; siehe lead_gelegenheiten_v.lead_typ)."
+      - name: anzahl_gelegenheiten
+        description: "Zahl der Gelegenheiten der Firma in den letzten 30 Tagen (ohne ausgeschlossene)."
+      - name: anzahl_ab_40
+        description: "Zahl der Gelegenheiten mit Vorscore ab 40."
+      - name: themen
+        description: "Themen über alle Stellen der Firma, kommagetrennt (Datenplattform, BI und Reporting, KI, Controlling, …)."
+      - name: regionen
+        description: "Bundesländer der Gelegenheiten, kommagetrennt."
+      - name: region_beste
+        description: "Bundesland der besten Gelegenheit."
+      - name: groesse
+        description: "Größenklasse nach Mitarbeitern: 'unter 20', '20-500', '501-2500', 'ueber 2500'. Leer, wenn unbekannt."
+      - name: mitarbeiter
+        description: "Mitarbeiterzahl (TheirStack/karriere.at; teils Untergrenze einer Spanne). Leer, wenn unbekannt."
+      - name: ist_konzern
+        description: "1 = Konzern oder Konzerntochter, sonst 0."
+      - name: ist_vermittler
+        description: "1 = Personalvermittler/Recruiting-Agentur, sonst 0."
+      - name: branche
+        description: "Branche laut TheirStack."
+      - name: technologien
+        description: "Technologien der Firma laut TheirStack (kommagetrennt)."
+      - name: fn
+        description: "Firmenbuchnummer (ohne führende Nullen, z. B. 88983h). Leer, wenn die Firma nicht sicher zugeordnet ist."
+      - name: rechtsform
+        description: "Rechtsform laut Firmenbuch (z. B. Gesellschaft mit beschränkter Haftung)."
+      - name: firmenbuch_sitz
+        description: "Sitz der Firma laut Firmenbuch."
+      - name: groessenklasse
+        description: "Größenklasse laut jüngstem Jahresabschluss: klein, mittel, gross; 'unbekannt' bei sonstigen Codes. Leer ohne Jahresabschluss."
+      - name: abschluss_stichtag
+        description: "Stichtag des jüngsten Jahresabschlusses."
+      - name: bilanzsumme
+        description: "Bilanzsumme in EUR laut jüngstem Jahresabschluss."
+      - name: umsatzerloese
+        description: "Umsatzerlöse in EUR; nur bei mittleren und großen Firmen offengelegt, sonst leer."
+      - name: eigenkapital
+        description: "Eigenkapital in EUR laut jüngstem Jahresabschluss."
+      - name: jahresergebnis
+        description: "Jahresüberschuss bzw. -fehlbetrag in EUR; nur bei mittleren und großen Firmen offengelegt, sonst leer."
+      - name: mitarbeiter_abschluss
+        description: "Durchschnittliche Mitarbeiterzahl laut Anhang des Jahresabschlusses; nur bei kleinen Firmen offengelegt, sonst leer."
+      - name: quellen
+        description: "Quellen der Gelegenheiten der Firma, kommagetrennt."
+      - name: erste_sichtung
+        description: "Datum der ersten Sichtung einer Gelegenheit der Firma."
+      - name: letzte_sichtung
+        description: "Datum der letzten Sichtung."
+      - name: beste_gelegenheiten
+        description: "Bis zu fünf beste Gelegenheiten als Text: 'Titel [Typ Vorscore] | …', beste zuerst."
+      - name: firmenbuch_ereignisse
+        description: "Jüngste Veränderung im Firmenbuch als Text (Art, Datum, Anzahl im Zeitraum). Leer, wenn keine bekannt."
+      - name: status
+        description: "Lead-Status der Firma aus dem Suchprofil (beworben, kontaktiert, kein Fit, erledigt). Leer = unbearbeitet."
+      - name: status_am
+        description: "Datum des Lead-Status."

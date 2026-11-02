@@ -3,7 +3,7 @@
     Grain: 1 Zeile je Gelegenheit (Cluster derselben Stelle ueber mehrere Quellen; Repraesentant mit dem besten Text), veroeffentlicht oder
            zuletzt gesehen in den letzten 30 Tagen, ohne ausgeschlossene (Festanstellung ueber Vermittler). Zweck: Tagesliste der besten
            Gelegenheiten per MCP/Skill lesen.
-    Schluessel: gelegenheit_key und gelegenheit_id als varchar (das MCP-Blaettern scheitert an grossen bigint-Schluesseln).
+    Schluessel: gelegenheit_id (erste Spalte, Schluessel zum Blaettern) und gelegenheit_key als varchar (das MCP-Blaettern scheitert an grossen bigint-Schluesseln).
     Bewertung: lead_typ, vorscore und alle Bausteine (p_*), begruendung_kurz, themen. Punkte aus ref_lead_engine__gewicht
                (Seed-Startwerte, ueberschrieben durch die Gewichte aus der Landing-Quelle suchprofil).
     Status: Lead-Status aus dem Suchprofil (juengster Eintrag zur gelegenheit_id); beworben/kontaktiert/kein Fit/erledigt und
@@ -15,8 +15,8 @@
 {{ config(materialized='view', tags=['report']) }}
 
 select
-    cast(abs(convert(bigint, hashbytes('MD5', s.cluster_key))) as varchar(20))   as gelegenheit_key,
     s.cluster_key                                                                as gelegenheit_id,
+    cast(abs(convert(bigint, hashbytes('MD5', s.cluster_key))) as varchar(20))   as gelegenheit_key,
     s.lead_typ, s.vorscore,
     s.p_thema, s.p_typ, s.p_region, s.p_frische, s.p_passung, s.p_bonus, s.p_abzug,
     s.begruendung_kurz, s.themen,

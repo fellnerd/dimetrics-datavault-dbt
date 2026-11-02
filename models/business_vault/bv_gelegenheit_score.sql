@@ -9,6 +9,7 @@
     Ausgeschlossen (bleibt mit Kennzeichen in der Tabelle): Festanstellung ueber Vermittler. Lead-Status und Sperrliste folgen mit Phase B.
     Typ- und Region-Punkte gibt es nur, wenn ein Kernthema (Datenplattform, BI und Reporting, KI, Controlling) im Titel trifft; ein
     Negativbegriff im Titel nimmt sie ebenfalls (zusaetzlich zum Abzug).
+    Passung Firmengroesse: 20-500 Mitarbeiter oder Groessenklasse klein/mittel (Jahresabschluss, Firmenbuch); Konzern/gross bleibt neutral (nur der Konzern-Abzug).
     Hybrid-Bonus: wenn hybrid und die Region unter 10 Punkten liegt (Gewichte-Blatt).
     Bausteine: p_thema (0-35), p_typ, p_region (0-20), p_frische (0-15), p_passung (0-5), p_bonus (bis +15), p_abzug (bis -25); vorscore = Summe.
     Materialisierung: Tabelle (statt View): lead_gelegenheiten_v und lead_firmen_v lesen sie mehrfach, als View waere jede Abfrage zu teuer.
@@ -63,7 +64,7 @@ punkte as (
                          when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 14 then 'bis_14_tage'
                          when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 30 then 'bis_30_tage' else 'aelter' end), 0) as int) as p_frische,
            cast(case when b.stundensatz_min >= 60 or b.budget_text is not null then p.p_stundensatz else 0 end
-              + case when b.mitarbeiter between 20 and 500 then p.p_groesse else 0 end as int) as p_passung,
+              + case when b.mitarbeiter between 20 and 500 or b.groessenklasse_code in ('K', 'M') then p.p_groesse else 0 end as int) as p_passung,
            cast(case when b.tage_online > p.s_lange_offen or b.ist_reposted = 1 then p.b_lange_offen else 0 end
               + case when b.reaktionen is not null and b.reaktionen <= 3 then p.b_reaktionen else 0 end
               + case when coalesce(z.andere, 0) > 0 and b.thema_roh > 0 then p.b_zweite else 0 end as int) as p_bonus,

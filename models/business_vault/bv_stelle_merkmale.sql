@@ -140,6 +140,15 @@ firma_attr as (
     left join {{ ref('sat_firma__karriere') }} k on k.hk_firma = h.hk_firma and k.dss_is_current = 'Y'
     left join {{ ref('sat_firma__theirstack_detail') }} fd on fd.hk_firma = h.hk_firma and fd.dss_is_current = 'Y'
     left join {{ ref('sat_firma__impressum') }} imp on imp.hk_firma = h.hk_firma and imp.dss_is_current = 'Y'
+),
+
+abschluss as (   -- Groessenklasse des juengsten Jahresabschlusses je Master-Firma (ueber alle Firmen des Masters)
+    select x.master_firma_bk, x.groessenklasse_code
+    from (select f.master_firma_bk, ja.groessenklasse_code,
+                 row_number() over (partition by f.master_firma_bk order by ja.stichtag desc, f.hk_firma) as rn
+          from {{ ref('bv_firma_same_as') }} f
+          join {{ ref('sat_firma__jahresabschluss') }} ja on ja.hk_firma = f.hk_firma and ja.dss_is_current = 'Y') x
+    where x.rn = 1
 )
 
 select
@@ -175,9 +184,10 @@ select
          else 'unbekannt' end                                                           as region_gruppe,
     fm.master_firma_bk, coalesce(fm.firma_name, r.buyer_name) as firma_name,
     cast(coalesce(fa.ist_vermittler, 0) as int)                                         as ist_vermittler,
-    fa.mitarbeiter, fa.branche, fa.technologien, fa.konzern_hinweis, fa.fremde_jobdomain,
+    fa.mitarbeiter, ab.groessenklasse_code, fa.branche, fa.technologien, fa.konzern_hinweis, fa.fremde_jobdomain,
     r.budget_text, r.stundensatz_min, r.reaktionen,
     r.aus_projektarbeit, r.aus_projekte_suche
 from region r
 left join firma fm on fm.hk_firma = r.hk_firma
 left join firma_attr fa on fa.hk_firma = r.hk_firma
+left join abschluss ab on ab.master_firma_bk = fm.master_firma_bk
