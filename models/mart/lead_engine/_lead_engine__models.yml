@@ -177,11 +177,11 @@ models:
       - name: ort
         description: "Arbeitsort der Stelle (Text aus der Anzeige). Leer bei vielen Website-Stellen."
       - name: ort_quelle
-        description: "Herkunft des Orts: 'stelle' (Ort aus der Anzeige) oder 'firmenbuch_sitz' (Anzeige ohne Ort; Ersatz ist der Sitz der Firma laut Firmenbuch, ungefähr)."
+        description: "Herkunft des Orts: 'stelle' (Ort aus der Anzeige), 'impressum' (Anzeige ohne Ort; Ersatz ist die PLZ aus dem Impressum der Firma) oder 'firmenbuch_sitz' (Ersatz ist der Sitz laut Firmenbuch). Beide Ersatzorte sind ungefähr und zählen in p_region nur halb."
       - name: plz
         description: "Postleitzahl des Arbeitsorts, wenn bekannt (oft leer)."
       - name: bundesland
-        description: "Bundesland des Arbeitsorts (abgeleitet aus Ort/PLZ); leer, wenn nicht bestimmbar."
+        description: "Bundesland des Arbeitsorts (abgeleitet aus Ort/PLZ); 'mehrere' bei landesweiten oder bundeslandübergreifenden Angaben (z. B. 'Österreich'); leer, wenn nicht bestimmbar (z. B. Ausland, Remote ohne Ort)."
       - name: ist_remote
         description: "1 = reine Remote-Arbeit laut Anzeige, sonst 0."
       - name: ist_hybrid
@@ -327,9 +327,9 @@ models:
       - name: ort
         description: "Arbeitsort laut Anzeige."
       - name: ort_quelle
-        description: "Herkunft des Orts: 'stelle' (Ort aus der Anzeige) oder 'firmenbuch_sitz' (Anzeige ohne Ort; Ersatz ist der Sitz der Firma laut Firmenbuch, ungefähr)."
+        description: "Herkunft des Orts: 'stelle' (Ort aus der Anzeige), 'impressum' (Anzeige ohne Ort; Ersatz ist die PLZ aus dem Impressum der Firma) oder 'firmenbuch_sitz' (Ersatz ist der Sitz laut Firmenbuch). Beide Ersatzorte sind ungefähr und zählen in p_region nur halb."
       - name: bundesland
-        description: "Bundesland des Arbeitsorts; leer, wenn nicht bestimmbar."
+        description: "Bundesland des Arbeitsorts; 'mehrere' bei landesweiten oder bundeslandübergreifenden Angaben; leer, wenn nicht bestimmbar."
       - name: ist_remote
         description: "1 = Remote laut Anzeige, sonst 0."
       - name: veroeffentlicht_am

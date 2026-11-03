@@ -16,6 +16,7 @@ and ({{ alias }}.run_id in (select run_id from {{ source('lead_engine', 'lead_en
      or {{ alias }}.run_id in ({{ freigegeben }}))
 {%- if is_incremental() %}
 and {{ alias }}.run_id >= {{ grenze }}
-and {{ alias }}.run_id not in (select run_id from {{ this }} where run_id >= {{ grenze }})
+and {{ alias }}.run_id in (select d.run_id from {{ source('lead_engine', 'lead_engine_datei') }} d where d.run_id >= {{ grenze }}
+                              except select run_id from {{ this }} where run_id >= {{ grenze }})   {#- EXCEPT + IN statt NOT IN/NOT EXISTS: der Anti-Join lief als Nested Loop und brauchte bei karriere_stelle 70+ s -#}
 {%- endif %}
 {% endmacro %}

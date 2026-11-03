@@ -5,17 +5,27 @@
     Firma: wie in base_lead_engine__website_stelle (karriere_company_id > theirstack_company_id > Domain), damit hk_firma identisch ist.
     Impressum: fn (Firmenbuchnummer), uid, plz, ort, firmenname, konzern_hinweis; dazu fremde_jobdomain.
     Version: 2026-11-02 V1.0 Initialversion
+    Version: 2026-11-03 Vorfilter auf file_path vor dem JSON-Parsen (ohne neue Daten nur noch Pfad-Scan)
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
-with items as (
+with neu as (   -- erst die neuen Dateien bestimmen (nur Pfade), dann parsen: TOP + ORDER BY verhindert, dass der Optimierer das JSON aller Dateien vorab liest
+    select top (2147483647) f.file_path
+    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    where f.source = 'website'
+      {{ lead_engine_lauf_filter('f') }}
+    order by f.file_path
+),
+
+items as (
     select
         f.run_id, f.fetched_at, f.file_path,
         j.company_name,
         {{ lead_engine_domain('j.company_url') }}            as company_domain,
         j.karriere_company_id, j.theirstack_company_id,
         j.fremde_jobdomain, j.imp_fn, j.imp_uid, j.imp_plz, j.imp_ort, j.imp_firmenname, j.imp_konzern_hinweis
-    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    from neu n
+    join {{ source('lead_engine', 'lead_engine_datei') }} f on f.file_path = n.file_path
     cross apply openjson(f.payload) with (
         company_name          nvarchar(500)  '$.company.name',
         company_url           nvarchar(1000) '$.company.url',
@@ -29,8 +39,6 @@ with items as (
         imp_firmenname        nvarchar(500)  '$.impressum.firmenname',
         imp_konzern_hinweis   nvarchar(1000) '$.impressum.konzern_hinweis'
     ) j
-    where f.source = 'website'
-      {{ lead_engine_lauf_filter('f') }}
 ),
 
 ranked as (

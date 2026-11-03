@@ -6,15 +6,25 @@
                Firmenbuch-Stammdaten (Name, Sitz, Rechtsform, Gericht, Status) aus dem Kandidaten der Antwort mit dieser FN.
     FN normalisiert (Macro lead_engine_fn_norm, ohne fuehrende Nullen). Ins Staging kommen nur sichere Zuordnungen (Sicht _firma).
     Version: 2026-11-02 V1.0 Initialversion
+    Version: 2026-11-03 Vorfilter auf file_path vor dem JSON-Parsen (ohne neue Daten nur noch Pfad-Scan)
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
-with f as (
+with neu as (   -- erst die neuen Dateien bestimmen (nur Pfade), dann parsen: TOP + ORDER BY verhindert, dass der Optimierer das JSON aller Dateien vorab liest
+    select top (2147483647) f.file_path
+    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    where f.source = 'firmenbuch' and f.query_id = 'zuordnen'
+      {{ lead_engine_lauf_filter('f') }}
+    order by f.file_path
+),
+
+f as (
     select
         f.run_id, f.fetched_at, f.file_path,
         z.firmen_key, z.name as lead_name, z.standort, z.qualitaet, z.fnr,
         json_query(f.payload, '$.antwort.SUCHEFIRMARESPONSE.ERGEBNIS') as erg
-    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    from neu n
+    join {{ source('lead_engine', 'lead_engine_datei') }} f on f.file_path = n.file_path
     cross apply openjson(f.payload, '$.zuordnung') with (
         firmen_key nvarchar(100) '$.firmen_key',
         name       nvarchar(500) '$.name',
@@ -22,8 +32,6 @@ with f as (
         qualitaet  nvarchar(30)  '$.qualitaet',
         fnr        nvarchar(30)  '$.fnr'
     ) z
-    where f.source = 'firmenbuch' and f.query_id = 'zuordnen'
-      {{ lead_engine_lauf_filter('f') }}
 ),
 
 c as (   -- ERGEBNIS ist bei genau einem Treffer ein Objekt, sonst ein Array

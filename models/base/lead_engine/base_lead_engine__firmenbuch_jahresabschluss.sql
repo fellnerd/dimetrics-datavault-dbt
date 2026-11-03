@@ -8,10 +8,19 @@
     Umsatzerloese und Jahresergebnis stehen nur in der Gewinn- und Verlustrechnung grosser/mittlerer Firmen (GUV_GKV), die durchschnittliche
     Mitarbeiterzahl nur im offenzulegenden Anhang (ANLAGE2); sonst NULL. groessenklasse_code = GKL der Metadaten (K klein, M mittel, G gross; W ungeklaert).
     Version: 2026-11-03 V1.0 Initialversion
+    Version: 2026-11-03 Vorfilter auf file_path vor dem JSON-Parsen (ohne neue Daten nur noch Pfad-Scan)
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
-with f as (
+with neu as (   -- erst die neuen Dateien bestimmen (nur Pfade), dann parsen: TOP + ORDER BY verhindert, dass der Optimierer das JSON aller Dateien vorab liest
+    select top (2147483647) f.file_path
+    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    where f.source = 'firmenbuch' and f.query_id = 'jahresabschluss'
+      {{ lead_engine_lauf_filter('f') }}
+    order by f.file_path
+),
+
+f as (
     select
         f.run_id, f.fetched_at, f.file_path,
         {{ lead_engine_fn_norm("json_value(f.payload, '$.metadaten.FNR')") }}                    as fn,
@@ -29,9 +38,8 @@ with f as (
         json_value(f.payload, '$.inhalt_xml.GUV_GKV.BILANZ_GEWINN_VERLUST.JAHRESUEBERSCHUSS_JAHRESFEHLBETRAG.ERGEBNIS_NACH_STEUERN.ERGEBNIS_VOR_STEUERN.ZWISCHENSUMME_BETRIEBSERFOLG.UMSATZERLOESE.POSTENZEILE.BETRAG_GJ') as umsatz_roh,
         json_value(f.payload, '$.inhalt_xml.GUV_GKV.BILANZ_GEWINN_VERLUST.JAHRESUEBERSCHUSS_JAHRESFEHLBETRAG.POSTENZEILE.BETRAG_GJ') as ergebnis_roh,
         json_value(f.payload, '$.inhalt_xml.ANLAGE2_OFFENZULEGENDER_ANHANG.DURCHSCHNITTLICHE_ANZAHL_ARBEITNEHMER.ANZAHL') as mitarbeiter_roh
-    from {{ source('lead_engine', 'lead_engine_datei') }} f
-    where f.source = 'firmenbuch' and f.query_id = 'jahresabschluss'
-      {{ lead_engine_lauf_filter('f') }}
+    from neu n
+    join {{ source('lead_engine', 'lead_engine_datei') }} f on f.file_path = n.file_path
 ),
 
 ranked as (

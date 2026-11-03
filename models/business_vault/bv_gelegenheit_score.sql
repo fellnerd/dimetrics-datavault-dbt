@@ -11,7 +11,7 @@
     Negativbegriff im Titel nimmt sie ebenfalls (zusaetzlich zum Abzug).
     Passung Firmengroesse: 20-500 Mitarbeiter oder Groessenklasse klein/mittel (Jahresabschluss, Firmenbuch); Konzern/gross bleibt neutral (nur der Konzern-Abzug).
     Hybrid-Bonus: wenn hybrid und die Region unter 10 Punkten liegt (Gewichte-Blatt).
-    Bausteine: p_thema (0-35), p_typ, p_region (0-20), p_frische (0-15), p_passung (0-5), p_bonus (bis +15), p_abzug (bis -25); vorscore = Summe.
+    Bausteine: p_thema (0-35), p_typ, p_region (0-20; bei Ersatz-Ort ort_quelle <> 'stelle' halbiert), p_frische (0-15), p_passung (0-5), p_bonus (bis +15), p_abzug (bis -25); vorscore = Summe.
     Materialisierung: Tabelle (statt View): lead_gelegenheiten_v und lead_firmen_v lesen sie mehrfach, als View waere jede Abfrage zu teuer.
     Version: 2026-10-26 V1.0 Erste Fassung
 #}
@@ -55,8 +55,9 @@ punkte as (
            -- Negativbegriff im Titel: Typ- und Region-Punkte entfallen (der Abzug bleibt)
            cast(case when b.negativ_titel = 1 or b.kern_im_titel = 0 then 0 else (select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'typ' and g.schluessel = b.lead_typ) end as int) as p_typ,
            cast(case when b.negativ_titel = 1 or b.kern_im_titel = 0 then 0 when b.ist_remote = 1 then (select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = 'remote')
-                     else coalesce((select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = b.region_gruppe), 0)
-                          + case when b.ist_hybrid = 1 and coalesce((select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = b.region_gruppe), 0) < 10 then p.r_hybrid else 0 end
+                     else (coalesce((select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = b.region_gruppe), 0)
+                          + case when b.ist_hybrid = 1 and coalesce((select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'region' and g.schluessel = b.region_gruppe), 0) < 10 then p.r_hybrid else 0 end)
+                          / case when b.ort_quelle <> 'stelle' then 2 else 1 end   -- Ersatz-Ort (Impressum, Firmenbuch-Sitz): halbe Regionspunkte
                 end as int) as p_region,
            cast(coalesce((select g.punkte from {{ ref('ref_lead_engine__gewicht') }} g where g.bereich = 'frische' and g.schluessel =
                     case when datediff(day, b.veroeffentlicht_am, cast(getdate() as date)) <= 3 then 'bis_3_tage'

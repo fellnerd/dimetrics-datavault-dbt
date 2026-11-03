@@ -6,10 +6,19 @@
                  Gericht (FI_DKZ09), Homepage (FI_DKZ25), EUID der Hauptfirma (ZNR 000). Funktionen: base_lead_engine__firmenbuch_funktion.
     Nicht uebernommen: Geburtsdaten der Personen (PER/GEBURTSDATUM), Zweigniederlassungen (ZWL), Vollzuege, Unternehmensgegenstand.
     Version: 2026-11-03 V1.0 Initialversion
+    Version: 2026-11-03 Vorfilter auf file_path vor dem JSON-Parsen (ohne neue Daten nur noch Pfad-Scan)
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
-with f as (
+with neu as (   -- erst die neuen Dateien bestimmen (nur Pfade), dann parsen: TOP + ORDER BY verhindert, dass der Optimierer das JSON aller Dateien vorab liest
+    select top (2147483647) f.file_path
+    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    where f.source = 'firmenbuch' and f.query_id = 'auszug'
+      {{ lead_engine_lauf_filter('f') }}
+    order by f.file_path
+),
+
+f as (
     select
         f.run_id, f.fetched_at, f.file_path,
         {{ lead_engine_fn_norm("json_value(f.payload, '$.antwort.AUSZUG_V2_RESPONSE.FNR')") }}    as fn,
@@ -27,9 +36,8 @@ with f as (
         json_value(f.payload, '$.antwort.AUSZUG_V2_RESPONSE.FIRMA.FI_DKZ09.HGALT.TEXT')           as gericht,
         json_value(f.payload, '$.antwort.AUSZUG_V2_RESPONSE.FIRMA.FI_DKZ25.HOMEPAGE')             as homepage,
         json_query(f.payload, '$.antwort.AUSZUG_V2_RESPONSE.EUID')                                as euid_json
-    from {{ source('lead_engine', 'lead_engine_datei') }} f
-    where f.source = 'firmenbuch' and f.query_id = 'auszug'
-      {{ lead_engine_lauf_filter('f') }}
+    from neu n
+    join {{ source('lead_engine', 'lead_engine_datei') }} f on f.file_path = n.file_path
 ),
 
 ranked as (

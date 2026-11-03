@@ -15,3 +15,22 @@ seeds:
         description: Anzeigename der Rolle
       - name: role_description
         description: Beschreibung der Rolle
+
+  - name: lead_engine_ort_alias
+    description: "Alias-Ortsnamen der Lead-Engine: Schreibweisen, Regionen und Mehrfachangaben, die ref_lead_engine__ort nicht kennt (name_norm nach der Normalisierung in bv_stelle_merkmale). bundesland 'mehrere' = landesweit/mehrere Bundeslaender; ist_remote = 1 fuer Ortsangaben wie Homeoffice."
+    config:
+      schema: seed
+      column_types:
+        name_norm: nvarchar(200)
+        bundesland: nvarchar(100)
+        bemerkung: nvarchar(200)
+    columns:
+      - name: name_norm
+        description: "Ortsname klein und normalisiert (ohne Zusatz nach Komma/Klammer, ohne fuehrende PLZ, Wien-Bezirke als 'wien', ohne Vorsatz Grossraum/Raum/Naehe/Bezirk und ohne Zusatz 'stadt'/'umgebung')."
+        data_tests: [unique, not_null]
+      - name: bundesland
+        description: "Bundesland, 'mehrere' (landesweit oder mehrere Bundeslaender) oder leer (kein Bundesland, z. B. weltweit)."
+      - name: ist_remote
+        description: "1 = Ortsangabe bedeutet Remote/Homeoffice."
+      - name: bemerkung
+        description: "Art des Eintrags."

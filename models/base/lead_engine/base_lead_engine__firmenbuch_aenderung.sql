@@ -5,24 +5,32 @@
     Grain: eine Zeile je Lauf (run_id), Zeitraum und FN (normalisiert, ohne fuehrende Nullen); nur Ereignistyp und Datum, aggregiert.
     Die Zuordnung zu Firmen der Lead-Engine erfolgt erst im Staging (base_lead_engine__firmenbuch_ereignis).
     Version: 2026-11-02 V1.0 Initialversion
+    Version: 2026-11-03 Vorfilter auf file_path vor dem JSON-Parsen (ohne neue Daten nur noch Pfad-Scan)
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
-with ev as (
+with neu as (   -- erst die neuen Dateien bestimmen (nur Pfade), dann parsen: TOP + ORDER BY verhindert, dass der Optimierer das JSON aller Dateien vorab liest
+    select top (2147483647) f.file_path
+    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    where f.source = 'firmenbuch' and f.query_id = 'aenderungen'
+      {{ lead_engine_lauf_filter('f') }}
+    order by f.file_path
+),
+
+ev as (
     select
         f.run_id, f.fetched_at,
         json_value(f.payload, '$.antwort.VERAENDERUNGENFIRMARESPONSE.VON') as zeitraum_von,
         json_value(f.payload, '$.antwort.VERAENDERUNGENFIRMARESPONSE.BIS') as zeitraum_bis,
         {{ lead_engine_fn_norm('v.fnr') }}                                 as fn,
         v.vollzug, v.art
-    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    from neu n
+    join {{ source('lead_engine', 'lead_engine_datei') }} f on f.file_path = n.file_path
     cross apply openjson(f.payload, '$.antwort.VERAENDERUNGENFIRMARESPONSE.VERAENDERUNG') with (
         fnr    nvarchar(30)  '$.FNR',
         vollzug nvarchar(30) '$.VOLLZUGSDATUM',
         art    nvarchar(60)  '$.ARTDERVERAENDERUNG'
     ) v
-    where f.source = 'firmenbuch' and f.query_id = 'aenderungen'
-      {{ lead_engine_lauf_filter('f') }}
 ),
 
 letzte as (

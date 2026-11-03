@@ -7,14 +7,25 @@
     Datumsangaben ohne Jahr: Jahr aus fetched_at (Macro lead_engine_freelancer_datum); Budget bleibt Rohtext.
     Version: 2026-10-26 V1.0 Initialversion
     Version: 2026-10-26 Vollstaendigkeit ueber das Laufprotokoll + Anti-Join statt Ruhezeit (Macro lead_engine_lauf_filter)
+    Version: 2026-11-03 Vorfilter auf file_path vor dem JSON-Parsen (ohne neue Daten nur noch Pfad-Scan)
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
-with items as (
+with neu as (   -- erst die neuen Dateien bestimmen (nur Pfade), dann parsen: TOP + ORDER BY verhindert, dass der Optimierer das JSON aller Dateien vorab liest
+    select top (2147483647) f.file_path
+    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    where f.source = 'freelancer'
+      and f.query_id = 'liste'
+      {{ lead_engine_lauf_filter('f') }}
+    order by f.file_path
+),
+
+items as (
     select
         f.run_id, f.query_id, f.fetched_at, f.file_path, f.profil_treffer,
         j.*
-    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    from neu n
+    join {{ source('lead_engine', 'lead_engine_datei') }} f on f.file_path = n.file_path
     cross apply openjson(f.payload, '$.items') with (
         auftrags_id        nvarchar(40)   '$.auftrags_id',
         url                nvarchar(1000) '$.url',
@@ -37,9 +48,6 @@ with items as (
         n_budget_max       float         '$.norm.budget_max',
         n_budget_einheit   nvarchar(30)  '$.norm.budget_einheit'
     ) j
-    where f.source = 'freelancer'
-      and f.query_id = 'liste'
-      {{ lead_engine_lauf_filter('f') }}
 ),
 
 queries as (

@@ -6,18 +6,26 @@
     Nicht uebernommen: Geburtsdatum (PER/GEBURTSDATUM) und jede private Anschrift. seit = DATVON der Funktion.
     FUN und PER sind bei genau einem Eintrag ein Objekt, sonst ein Array.
     Version: 2026-11-03 V1.0 Initialversion
+    Version: 2026-11-03 Vorfilter auf file_path vor dem JSON-Parsen (ohne neue Daten nur noch Pfad-Scan)
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
-with f as (
+with neu as (   -- erst die neuen Dateien bestimmen (nur Pfade), dann parsen: TOP + ORDER BY verhindert, dass der Optimierer das JSON aller Dateien vorab liest
+    select top (2147483647) f.file_path
+    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    where f.source = 'firmenbuch' and f.query_id = 'auszug'
+      {{ lead_engine_lauf_filter('f') }}
+    order by f.file_path
+),
+
+f as (
     select
         f.run_id, f.fetched_at, f.file_path,
         {{ lead_engine_fn_norm("json_value(f.payload, '$.antwort.AUSZUG_V2_RESPONSE.FNR')") }}   as fn,
         json_query(f.payload, '$.antwort.AUSZUG_V2_RESPONSE.FUN') as fun_json,
         json_query(f.payload, '$.antwort.AUSZUG_V2_RESPONSE.PER') as per_json
-    from {{ source('lead_engine', 'lead_engine_datei') }} f
-    where f.source = 'firmenbuch' and f.query_id = 'auszug'
-      {{ lead_engine_lauf_filter('f') }}
+    from neu n
+    join {{ source('lead_engine', 'lead_engine_datei') }} f on f.file_path = n.file_path
 ),
 
 c as (   -- Objekt bei genau einem Eintrag, sonst Array

@@ -1,0 +1,52 @@
+name_norm,bundesland,ist_remote,bemerkung
+vienna,Wien,0,englischer Name
+wien,Wien,0,Bundesland-Name
+niederösterreich,Niederösterreich,0,Bundesland-Name
+nö,Niederösterreich,0,Kürzel
+oberösterreich,Oberösterreich,0,Bundesland-Name
+oö,Oberösterreich,0,Kürzel
+salzburg,Salzburg,0,Bundesland-Name
+steiermark,Steiermark,0,Bundesland-Name
+kärnten,Kärnten,0,Bundesland-Name
+tirol,Tirol,0,Bundesland-Name
+vorarlberg,Vorarlberg,0,Bundesland-Name
+voralberg,Vorarlberg,0,Tippfehler
+burgenland,Burgenland,0,Bundesland-Name
+tirol und vorarlberg,Tirol,0,Mehrfachangabe: erstes Bundesland
+österreich,mehrere,0,landesweit
+österreichweit,mehrere,0,landesweit
+westösterreich,mehrere,0,Landesteil
+ostösterreich,mehrere,0,Landesteil
+salzkammergut,mehrere,0,Region ueber drei Bundeslaender
+weltweit,,0,kein Bundesland
+europa,,0,kein Bundesland
+oststeiermark,Steiermark,0,Region
+südoststeiermark,Steiermark,0,Region
+südweststeiermark,Steiermark,0,Region
+weststeiermark,Steiermark,0,Region
+südsteiermark,Steiermark,0,Region
+obersteiermark,Steiermark,0,Region
+mürztal,Steiermark,0,Region
+murtal,Steiermark,0,Bezirk
+bruck-mürzzuschlag,Steiermark,0,Bezirk
+hartberg-fürstenfeld,Steiermark,0,Bezirk
+graz-umgebung,Steiermark,0,Bezirk
+graz ost,Steiermark,0,Stadtteil/Region
+grambach bei graz,Steiermark,0,Gemeinde
+friesach bei graz,Steiermark,0,Ortschaft
+teufenbach,Steiermark,0,Gemeinde (Teufenbach-Katsch)
+linz-land,Oberösterreich,0,Bezirk
+linz-wels-steyr,Oberösterreich,0,Zentralraum
+pinzgau,Salzburg,0,Region
+bergheim bei salzburg,Salzburg,0,Gemeinde
+mittelkärnten,Kärnten,0,Region
+st. stefan im lavanttal,Kärnten,0,Gemeinde
+bad sankt leonhard im lavanttal,Kärnten,0,Gemeinde
+sankt polten,Niederösterreich,0,Schreibweise
+sankt pölten,Niederösterreich,0,Schreibweise
+st.poelten,Niederösterreich,0,Schreibweise
+homeoffice,,1,Remote
+home office,,1,Remote
+home-office,,1,Remote
+remote,,1,Remote
+full remote,,1,Remote

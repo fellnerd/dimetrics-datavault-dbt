@@ -47,7 +47,10 @@ models:
   - name: ref_lead_engine__ort
     description: "Orte und PLZ Österreichs (Statistik Austria, CC BY 4.0), jüngster Stand."
   - name: ref_lead_engine__ort_name
-    description: "Ortsname -> Bundesland/Bezirk für den Abgleich ohne PLZ."
+    description: "Ortsname -> Bundesland/Bezirk für den Abgleich ohne PLZ (Statistik Austria plus Alias-Seed lead_engine_ort_alias; ist_remote = 1 für Remote-Angaben)."
+    columns:
+      - name: name_norm
+        data_tests: [not_null, unique]
 
   - name: bv_gelegenheit_basis
     description: "Hilfstabelle für bv_gelegenheit_score: je Cluster Merkmale, Themen-Summe, Negativ-Treffer und Lead-Typ (einmal berechnet)."

@@ -7,16 +7,26 @@
     Version: 2026-10-25 V1.1 profil_ids (Suchprofil, das die Stelle im Lauf gefunden hat)
     Version: 2026-10-26 V1.2 incremental: nur abgeschlossene Laeufe (Ruhezeit 30 Min.) mit run_id > bisherigem Maximum
     Version: 2026-10-26 Vollstaendigkeit ueber das Laufprotokoll + Anti-Join statt Ruhezeit (Macro lead_engine_lauf_filter)
+    Version: 2026-11-03 Vorfilter auf file_path vor dem JSON-Parsen (ohne neue Daten nur noch Pfad-Scan)
 #}
 {{ config(materialized='incremental', incremental_strategy='append', as_columnstore=false) }}
 
-with items as (
+with neu as (   -- erst die neuen Dateien bestimmen (nur Pfade), dann parsen: TOP + ORDER BY verhindert, dass der Optimierer das JSON aller Dateien vorab liest
+    select top (2147483647) f.file_path
+    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    where f.source = 'theirstack'
+      {{ lead_engine_lauf_filter('f') }}
+    order by f.file_path
+),
+
+items as (
     select
         f.run_id, f.query_id, f.fetched_at, f.file_path,
         -- Suchprofil aus dem Landing-Umschlag; aeltere Dateien ohne Profil = 'data-bi'
         coalesce(json_value(f.query_params, '$.profil_id'), 'data-bi') as profil_id,
         j.*
-    from {{ source('lead_engine', 'lead_engine_datei') }} f
+    from neu n
+    join {{ source('lead_engine', 'lead_engine_datei') }} f on f.file_path = n.file_path
     cross apply openjson(f.payload, '$.data') with (
         job_id               nvarchar(40)  '$.id',
         title                nvarchar(400) '$.job_title',
@@ -51,8 +61,6 @@ with items as (
         technology_names_json nvarchar(max) '$.company_object.technology_names' as json,
         industry_id          nvarchar(40)  '$.company_object.industry_id'
     ) j
-    where f.source = 'theirstack'
-      {{ lead_engine_lauf_filter('f') }}
 ),
 
 queries as (
