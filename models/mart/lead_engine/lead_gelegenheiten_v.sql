@@ -39,7 +39,7 @@ select
          when s.mitarbeiter <= 2500 then '501-2500'
          else 'ueber 2500' end                                                   as groesse,
     s.mitarbeiter, s.technologien,
-    s.ort, s.plz, s.bundesland, s.ist_remote, s.ist_hybrid,
+    s.ort, s.ort_quelle, s.plz, s.bundesland, s.ist_remote, s.ist_hybrid,
     s.vertragsart, s.veroeffentlicht_am, s.datum_geschaetzt, s.tage_online, s.reaktionen,
     s.budget_text                                                                as budget,
     s.status, s.status_am,

@@ -176,6 +176,8 @@ models:
         description: "Technologien der Firma laut TheirStack (kommagetrennt). Oft leer."
       - name: ort
         description: "Arbeitsort der Stelle (Text aus der Anzeige). Leer bei vielen Website-Stellen."
+      - name: ort_quelle
+        description: "Herkunft des Orts: 'stelle' (Ort aus der Anzeige) oder 'firmenbuch_sitz' (Anzeige ohne Ort; Ersatz ist der Sitz der Firma laut Firmenbuch, ungefähr)."
       - name: plz
         description: "Postleitzahl des Arbeitsorts, wenn bekannt (oft leer)."
       - name: bundesland
@@ -262,6 +264,10 @@ models:
         description: "Rechtsform laut Firmenbuch (z. B. Gesellschaft mit beschränkter Haftung)."
       - name: firmenbuch_sitz
         description: "Sitz der Firma laut Firmenbuch."
+      - name: geschaeftsfuehrung
+        description: "Geschäftsführung laut Firmenbuch-Auszug (Geschäftsführer, Vorstand, Geschäftsleiter, Komplementäre): 'Name (Funktion, seit Datum) | …'. Ohne Geburtsdatum. Leer, wenn die Firma nicht sicher zugeordnet ist oder kein Auszug vorliegt."
+      - name: anzahl_prokuristen
+        description: "Zahl der Prokuristen laut Firmenbuch-Auszug (0, wenn keine oder unbekannt)."
       - name: groessenklasse
         description: "Größenklasse laut jüngstem Jahresabschluss: klein, mittel, gross; 'unbekannt' bei sonstigen Codes. Leer ohne Jahresabschluss."
       - name: abschluss_stichtag
@@ -320,6 +326,8 @@ models:
         description: "Schlüssel der Firma wie in lead_firmen_v (Text). Leer bei Gelegenheiten ohne bekannte Firma."
       - name: ort
         description: "Arbeitsort laut Anzeige."
+      - name: ort_quelle
+        description: "Herkunft des Orts: 'stelle' (Ort aus der Anzeige) oder 'firmenbuch_sitz' (Anzeige ohne Ort; Ersatz ist der Sitz der Firma laut Firmenbuch, ungefähr)."
       - name: bundesland
         description: "Bundesland des Arbeitsorts; leer, wenn nicht bestimmbar."
       - name: ist_remote
@@ -346,6 +354,10 @@ models:
         description: "Größenklasse nach Mitarbeitern: 'unter 20', '20-500', '501-2500', 'ueber 2500'. Leer, wenn unbekannt."
       - name: ist_konzern
         description: "1 = Konzern oder Konzerntochter, sonst 0."
+      - name: geschaeftsfuehrung
+        description: "Geschäftsführung laut Firmenbuch-Auszug (Geschäftsführer, Vorstand, Geschäftsleiter, Komplementäre): 'Name (Funktion, seit Datum) | …'. Ohne Geburtsdatum. Leer, wenn die Firma nicht sicher zugeordnet ist oder kein Auszug vorliegt."
+      - name: anzahl_prokuristen
+        description: "Zahl der Prokuristen laut Firmenbuch-Auszug (0, wenn keine oder unbekannt)."
       - name: groessenklasse
         description: "Größenklasse laut jüngstem Jahresabschluss: klein, mittel, gross; 'unbekannt' bei sonstigen Codes. Leer ohne Jahresabschluss."
       - name: groessenklasse_code

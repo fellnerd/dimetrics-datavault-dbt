@@ -63,6 +63,19 @@ firma as (   -- Firmenbuch und Jahresabschluss je Master (ueber alle Firmen des 
     group by f.master_firma_bk
 ),
 
+funktion as (   -- Geschaeftsfuehrung und Prokura laut Firmenbuch-Auszug je Master (jeweils aktueller Stand)
+    select x.master_firma_bk,
+           left(string_agg(case when x.funktion_code in ('GF', 'VM', 'GL', 'KP') then x.anzeige end, ' | ') within group (order by x.seit, x.nachname), 1500) as geschaeftsfuehrung,
+           sum(case when x.funktion_code = 'PR' then 1 else 0 end) as anzahl_prokuristen
+    from (select distinct f.master_firma_bk, fu.funktion_code, fu.pnr, fu.nachname, fu.seit,
+                 concat(concat_ws(' ', fu.titel, fu.vorname, fu.nachname), case when fu.titel_nach is not null then ', ' + fu.titel_nach else '' end,
+                        ' (', fu.funktion, case when fu.seit is not null then concat(', seit ', convert(varchar(10), fu.seit, 23)) else '' end, ')') as anzeige
+          from {{ ref('bv_firma_same_as') }} f
+          join {{ ref('sat_firma__firmenbuch_funktion') }} fu on fu.hk_firma = f.hk_firma and fu.dss_is_current = 'Y'
+          where f.master_firma_bk in (select master_firma_bk from masters)) x
+    group by x.master_firma_bk
+),
+
 abschluss as (
     select x.*
     from (select f.master_firma_bk, ja.stichtag, ja.groessenklasse, ja.groessenklasse_code, ja.bilanzsumme, ja.umsatzerloese, ja.eigenkapital,
@@ -81,7 +94,7 @@ select
     left(o.text, 4000)                                                             as text,
     o.firma_name,
     case when o.master_firma_bk is not null then convert(varchar(32), hashbytes('MD5', o.master_firma_bk), 2) end as firma_id,
-    o.ort, o.bundesland, o.ist_remote, o.veroeffentlicht_am,
+    o.ort, o.ort_quelle, o.bundesland, o.ist_remote, o.veroeffentlicht_am,
     o.begruendung_kurz,
     o.p_thema, o.p_typ, o.p_region, o.p_frische, o.p_passung, o.p_bonus, o.p_abzug,
     case when o.mitarbeiter is null then null
@@ -93,7 +106,9 @@ select
     ab.groessenklasse, ab.groessenklasse_code, ab.stichtag                         as abschluss_stichtag,
     ab.bilanzsumme, ab.umsatzerloese, ab.eigenkapital, ab.jahresergebnis, ab.mitarbeiter_durchschnitt as mitarbeiter_abschluss,
     fi.fn, fi.rechtsform, fi.firmenbuch_sitz, fi.firmenbuch_ereignisse,
+    fu.geschaeftsfuehrung, coalesce(fu.anzahl_prokuristen, 0) as anzahl_prokuristen,
     o.grund, o.ki_bisher                                                           as ki_bisherige_einstufung, o.ki_bewertet_am
 from offen o
 left join firma fi on fi.master_firma_bk = o.master_firma_bk
 left join abschluss ab on ab.master_firma_bk = o.master_firma_bk
+left join funktion fu on fu.master_firma_bk = o.master_firma_bk

@@ -206,3 +206,17 @@ models:
         data_tests: [not_null]
   - name: base_lead_engine__ki_bewertung
     description: "Sicht auf die Eingangstabelle der KI-Bewertung (darf leer sein)."
+  - name: stg_lead_engine__firmenbuch_funktion
+    description: "Staging Funktionsträger aus dem Firmenbuch-Auszug (Gruppe je Firma, juengster Auszug je FN). Speist sat_firma__firmenbuch_funktion."
+    columns:
+      - name: hk_firma
+        data_tests: [not_null]
+  - name: base_lead_engine__firmenbuch_auszug
+    description: "Base-Tabelle (incremental): Auszug (Kurzinformation) je Lauf und FN: Anschrift, Sitz, Rechtsform, Homepage, EUID."
+    columns:
+      - name: fn
+        data_tests: [not_null]
+  - name: base_lead_engine__firmenbuch_funktion
+    description: "Base-Tabelle (incremental): aufrechte Funktionen mit Personen (ohne Geburtsdatum) je Lauf, FN, Funktion und Personennummer."
+  - name: base_lead_engine__firmenbuch_funktion_firma
+    description: "Sicht: Funktionen des jüngsten Auszugs je FN, zugeordnet zu den Firmen der Lead-Engine über sichere Zuordnungen."

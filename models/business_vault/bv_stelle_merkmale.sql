@@ -8,7 +8,9 @@
     Region: Ort -> Bundesland ueber ref_lead_engine__ort_name (PLZ folgt, sobald vorhanden); region_gruppe passt zu den
             Schluesseln im Bereich 'region' der Gewichte (Kärnten, Steiermark, ..., Osttirol, Tirol (= Nordtirol), DACH, unbekannt).
     TED: Auftraggeber (buyer_name) als firma_name, kein Firmen-Link; Vertragsart 'projekt'.
-    Nicht enthalten (Phase B): Website-Detailtexte, Lead-Status, Firmenbuch.
+    Ort: hat eine Stelle weder Ort noch PLZ noch Region (und ist nicht remote), dient der Sitz der Firma laut Firmenbuch-Auszug (PLZ, Ort)
+         als Ersatz (ort_quelle 'firmenbuch_sitz'); das Bundesland kommt dann ueber den Ort oder die PLZ (ref_lead_engine__ort).
+    Nicht enthalten (Phase B): Website-Detailtexte, Lead-Status.
     Materialisierung: Tabelle statt View (Business Vault sonst virtuell): die Berechnung (viele Satelliten, Textnormalisierung) wird von
     bv_stelle_thema, bv_stelle_cluster und bv_gelegenheit_score mehrfach gebraucht und waere als View je Abfrage zu teuer.
     Version: 2026-10-26 V1.0 Erste Fassung
@@ -49,6 +51,16 @@ link_aktuell as (
     where rn = 1
 ),
 
+fb_sitz as (   -- Sitz laut Firmenbuch-Auszug je Firma (Master-Ebene): Ortsquelle fuer Stellen ohne eigenen Ort
+    select f.hk_firma, m.plz, m.ort
+    from {{ ref('bv_firma_same_as') }} f
+    join (select f2.master_firma_bk, min(fb.adresse_plz) as plz, min(fb.adresse_ort) as ort
+          from {{ ref('bv_firma_same_as') }} f2
+          join {{ ref('sat_firma__firmenbuch') }} fb on fb.hk_firma = f2.hk_firma and fb.dss_is_current = 'Y'
+          where fb.adresse_staat = 'AUT' and fb.adresse_plz is not null
+          group by f2.master_firma_bk) m on m.master_firma_bk = f.master_firma_bk
+),
+
 basis as (
     select
         h.hk_stelle, h.collision_code as quelle, h.stelle_bk,
@@ -78,10 +90,10 @@ basis as (
                  case when lower(fl.location) like '%ferne%' or lower(coalesce(k.title, t.title, w.title, fl.title, az.title)) like '%remote%' then 1 end) as ist_remote_roh,
         coalesce(t.is_hybrid, k.is_home_office,
                  case when lower(coalesce(k.title, t.title, w.title, fl.title, az.title)) like '%hybrid%' then 1 end) as ist_hybrid_roh,
-        coalesce(nullif(fd.norm_ort, ''), nullif(az.location_name, ''), nullif(kd.orte_text, ''), nullif(k.locations, ''), nullif(td.short_location, ''),
-                 nullif(t.location, ''), nullif(fl.location, ''), nullif(te.buyer_city, ''))                       as ort_roh,
+        coalesce(oc.ort_stelle, case when oc.ohne_ort = 1 then fs.ort end)                                    as ort_roh,
+        case when oc.ort_stelle is null and oc.ohne_ort = 1 and fs.plz is not null then 'firmenbuch_sitz' else 'stelle' end as ort_quelle,
         concat_ws(' ', az.location_area, kd.region)                                     as location_area,
-        kd.plz                                                                          as plz_roh,
+        coalesce(kd.plz, case when oc.ohne_ort = 1 then fs.plz end)                     as plz_roh,
         coalesce(fd.norm_land, td.country_code, kd.land, case when te.place like '%AUT%' then 'AT' end) as land_roh,
         coalesce(k.salary, fl.budget,
                  case when az.salary_min is not null then concat(cast(cast(az.salary_min as int) as nvarchar(20)), ' - ', cast(cast(az.salary_max as int) as nvarchar(20))) end) as budget_text,
@@ -103,6 +115,15 @@ basis as (
     left join {{ ref('sat_stelle__adzuna') }} az           on az.hk_stelle = h.hk_stelle and az.dss_is_current = 'Y'
     left join {{ ref('sat_stelle__ted') }} te              on te.hk_stelle = h.hk_stelle and te.dss_is_current = 'Y'
     left join link_aktuell la on la.hk_stelle = h.hk_stelle
+    left join fb_sitz fs on fs.hk_firma = la.hk_firma
+    outer apply (
+        select coalesce(nullif(fd.norm_ort, ''), nullif(az.location_name, ''), nullif(kd.orte_text, ''), nullif(k.locations, ''), nullif(td.short_location, ''),
+                        nullif(t.location, ''), nullif(fl.location, ''), nullif(te.buyer_city, '')) as ort_stelle,
+               case when coalesce(nullif(fd.norm_ort, ''), nullif(az.location_name, ''), nullif(kd.orte_text, ''), nullif(k.locations, ''), nullif(td.short_location, ''),
+                                  nullif(t.location, ''), nullif(fl.location, ''), nullif(te.buyer_city, '')) is null
+                         and kd.plz is null and nullif(concat_ws(' ', az.location_area, kd.region), '') is null
+                         and coalesce(t.is_remote, fd.norm_ist_remote, 0) = 0 then 1 else 0 end as ohne_ort
+    ) oc
 ),
 
 ort as (
@@ -119,7 +140,8 @@ region as (
            coalesce(
                on1.bundesland,
                (select top 1 x.bundesland from (select distinct bundesland from {{ ref('ref_lead_engine__ort') }}) x
-                 where o.location_area like '%' + x.bundesland + '%')) as bundesland,
+                 where o.location_area like '%' + x.bundesland + '%'),
+               (select top 1 z.bundesland from {{ ref('ref_lead_engine__ort') }} z where z.plz = o.plz_roh)) as bundesland,
            on1.bezirk
     from ort o
     left join {{ ref('ref_lead_engine__ort_name') }} on1 on on1.name_norm = o.ort_name
@@ -172,6 +194,7 @@ select
     cast(coalesce(r.ist_hybrid_roh, 0) as int)                                          as ist_hybrid,
     r.plz_roh                                                                           as plz,
     r.ort_roh                                                                           as ort,
+    r.ort_quelle,
     r.bundesland,
     coalesce(r.land_roh, case when r.bundesland is not null then 'AT' end)              as land,
     case when r.bundesland = 'Kärnten' then 'Kärnten'

@@ -3,12 +3,14 @@
     Parent Hub: hub_firma
     Source: stg_lead_engine__firmenbuch_firma
     Payload: Firmenbuchnummer (normalisiert), Name, Sitz, Rechtsform, Gericht, Status laut Firmenbuch (nur sichere Zuordnungen)
-    Funktionstraeger (Auszug) sind nicht dabei: die Quelle liefert dazu keine Query.
+    Auszug (Kurzinformation): Geschaeftsanschrift (Strasse, PLZ, Ort, Staat), Homepage, EUID. Funktionstraeger: sat_firma__firmenbuch_funktion.
     Version: 2026-11-02 V1.0 Initialversion
+    Version: 2026-11-03 V1.1 Auszug-Felder; neue Spalten per on_schema_change (alte Zeilen behalten NULL, keine Neuaufbau)
 #}
 
 {{ config(
     materialized='incremental',
+    on_schema_change='append_new_columns',
     as_columnstore=false,
     meta={'apply_source_filter': true},
     post_hook=[
@@ -31,6 +33,12 @@ src_payload:
   - rechtsform
   - gericht
   - firmenbuch_status
+  - adresse_strasse
+  - adresse_plz
+  - adresse_ort
+  - adresse_staat
+  - homepage
+  - euid
 src_extra_columns:
   - "dss_create_datetime"
 src_ldts: "dss_load_date"

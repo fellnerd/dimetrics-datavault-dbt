@@ -111,6 +111,6 @@ select
         case when ist_konzern = 1 then 'Konzern' end,
         case when negativ_titel = 1 then 'Negativbegriff im Titel' end) as begruendung_kurz,
     titel, text, text_quelle, url, veroeffentlicht_am, datum_geschaetzt, erste_sichtung, letzte_sichtung, tage_online,
-    vertragsart, ist_remote, ist_hybrid, ort, bundesland, land, region_gruppe, plz,
+    vertragsart, ist_remote, ist_hybrid, ort, ort_quelle, bundesland, land, region_gruppe, plz,
     master_firma_bk, firma_name, ist_vermittler, mitarbeiter, branche, technologien, budget_text, stundensatz_min, reaktionen, ist_online
 from markiert

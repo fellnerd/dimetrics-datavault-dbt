@@ -7,6 +7,7 @@
            Technologien. Ersetzt nach Umstellung des Skills lead_kandidaten_v.
     Schluessel: firma_id (varchar, Hash des Masters) statt bigint (das MCP-Blaettern scheitert an grossen bigint-Schluesseln).
     Firmenbuch: fn, rechtsform, firmenbuch_sitz und firmenbuch_ereignisse (juengste Veraenderung im Firmenbuch) aus sat_firma__firmenbuch(_ereignis).
+    Funktionstraeger: geschaeftsfuehrung (GF, Vorstand, Geschaeftsleiter, Komplementaere mit Funktion und seit) und anzahl_prokuristen aus sat_firma__firmenbuch_funktion.
     Jahresabschluss: groessenklasse, abschluss_stichtag, bilanzsumme, umsatzerloese, eigenkapital, jahresergebnis, mitarbeiter_abschluss (nur Kennzahlen; Umsatz,
     Ergebnis und Mitarbeiter nur wenn offengelegt) aus sat_firma__jahresabschluss.
     Quellen: bv_gelegenheit_score, bv_stelle_cluster, bv_stelle_thema
@@ -83,6 +84,19 @@ ki_firma as (   -- KI-Urteile der Gelegenheiten der Firma (juengstes Urteil je G
     group by g.master_firma_bk
 ),
 
+funktion as (   -- Geschaeftsfuehrung und Prokura laut Firmenbuch-Auszug je Master (jeweils aktueller Stand)
+    select x.master_firma_bk,
+           left(string_agg(case when x.funktion_code in ('GF', 'VM', 'GL', 'KP') then x.anzeige end, ' | ') within group (order by x.seit, x.nachname), 1500) as geschaeftsfuehrung,
+           sum(case when x.funktion_code = 'PR' then 1 else 0 end) as anzahl_prokuristen
+    from (select distinct f.master_firma_bk, fu.funktion_code, fu.pnr, fu.nachname, fu.seit,
+                 concat(concat_ws(' ', fu.titel, fu.vorname, fu.nachname), case when fu.titel_nach is not null then ', ' + fu.titel_nach else '' end,
+                        ' (', fu.funktion, case when fu.seit is not null then concat(', seit ', convert(varchar(10), fu.seit, 23)) else '' end, ')') as anzeige
+          from {{ ref('bv_firma_same_as') }} f
+          join {{ ref('sat_firma__firmenbuch_funktion') }} fu on fu.hk_firma = f.hk_firma and fu.dss_is_current = 'Y'
+          where f.master_firma_bk in (select master_firma_bk from je_firma)) x
+    group by x.master_firma_bk
+),
+
 abschluss as (   -- Kennzahlen des juengsten Jahresabschlusses je Master (ueber alle Firmen des Masters)
     select x.*
     from (select f.master_firma_bk, ja.stichtag, ja.groessenklasse, ja.bilanzsumme, ja.umsatzerloese, ja.eigenkapital, ja.jahresergebnis,
@@ -118,6 +132,7 @@ select
     b.mitarbeiter, jf.ist_konzern, jf.ist_vermittler,
     b.branche, b.technologien,
     fbk.fn, fbk.rechtsform, fbk.sitz                                                as firmenbuch_sitz,
+    fu.geschaeftsfuehrung, coalesce(fu.anzahl_prokuristen, 0)                       as anzahl_prokuristen,
     ab.groessenklasse, ab.stichtag                                                  as abschluss_stichtag,
     ab.bilanzsumme, ab.umsatzerloese, ab.eigenkapital, ab.jahresergebnis,
     ab.mitarbeiter_durchschnitt                                                     as mitarbeiter_abschluss,
@@ -140,5 +155,6 @@ left join regionen rg on rg.master_firma_bk = b.master_firma_bk
 left join titel t on t.master_firma_bk = b.master_firma_bk
 left join firmenbuch fbk on fbk.master_firma_bk = b.master_firma_bk
 left join abschluss ab on ab.master_firma_bk = b.master_firma_bk
+left join funktion fu on fu.master_firma_bk = b.master_firma_bk
 left join ki_firma kf on kf.master_firma_bk = b.master_firma_bk
 where b.rn = 1

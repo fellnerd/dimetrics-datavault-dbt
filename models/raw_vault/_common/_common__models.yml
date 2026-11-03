@@ -172,3 +172,10 @@ models:
         data_tests: [not_null]
       - name: hashdiff
         data_tests: [not_null]
+  - name: sat_firma__firmenbuch_funktion
+    description: "Multi-Active-Satellit: Funktionsträger laut Firmenbuch-Auszug je Firma (Funktion, Titel, Vor-/Nachname, seit; ohne Geburtsdatum und Privatanschrift). Schlüssel je Gruppe: funktion_code + pnr."
+    columns:
+      - name: hk_firma
+        data_tests: [not_null]
+      - name: hashdiff
+        data_tests: [not_null]
