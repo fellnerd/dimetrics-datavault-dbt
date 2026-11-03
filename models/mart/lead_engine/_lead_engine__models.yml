@@ -111,6 +111,26 @@ models:
       - name: anzahl_stellen_60t
         data_tests: [not_null]
 
+  - name: lead_gelegenheiten
+    description: |
+      Tabelle (Tageslauf) hinter lead_gelegenheiten_v und lead_ki_offen_v: dieselben Spalten ohne ki_*, zusätzlich master_firma_bk, firma_id und
+      inhalt_geaendert_am. Wird nicht direkt abgefragt (der MCP liest die Views).
+    columns:
+      - name: gelegenheit_id
+        data_tests: [not_null, unique]
+      - name: vorscore
+        data_tests: [not_null]
+
+  - name: lead_firmen
+    description: |
+      Tabelle (Tageslauf) hinter lead_firmen_v und lead_ki_offen_v: dieselben Spalten ohne ki_*, zusätzlich groessenklasse_code. Wird nicht direkt
+      abgefragt (der MCP liest die Views).
+    columns:
+      - name: firma_id
+        data_tests: [not_null, unique]
+      - name: bester_vorscore
+        data_tests: [not_null]
+
   - name: lead_gelegenheiten_v
     description: |
       Tagesliste der Lead-Engine: 1 Zeile je Gelegenheit (dieselbe Stelle aus mehreren Quellen ist zu einer Zeile zusammengefasst), veröffentlicht

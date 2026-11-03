@@ -24,6 +24,12 @@
     )
   {% endset %}
   {% do run_query(ddl) %}
+  {#- Index fuer "juengstes Urteil je Gelegenheit" (die Views lead_gelegenheiten_v, lead_firmen_v, lead_ki_offen_v lesen live); if not exists -#}
+  {% set idx %}
+    IF NOT EXISTS (select 1 from sys.indexes where name = 'ix_lead_engine_ki_bewertung_gelegenheit' and object_id = object_id('landing.lead_engine_ki_bewertung'))
+        CREATE NONCLUSTERED INDEX ix_lead_engine_ki_bewertung_gelegenheit ON landing.lead_engine_ki_bewertung (gelegenheit_id, bewertet_am DESC)
+  {% endset %}
+  {% do run_query(idx) %}
   {% set grant_sql %}
     IF DATABASE_PRINCIPAL_ID('lead_mart_mcp') IS NOT NULL
         GRANT SELECT, INSERT ON landing.lead_engine_ki_bewertung TO lead_mart_mcp
