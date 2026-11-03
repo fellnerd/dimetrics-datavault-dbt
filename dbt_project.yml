@@ -10,6 +10,7 @@ profile: 'datavault'
 #   - "{{ log_load_status(results) }}" ergaenzen.
 on-run-start:
   - "{{ lead_engine_ki_bewertung_tabelle() }}"
+  - "{{ lead_engine_landing_spalten() }}"
 on-run-end:
   - "{{ grant_select_on_views() }}"
 

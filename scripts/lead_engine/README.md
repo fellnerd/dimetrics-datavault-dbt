@@ -14,6 +14,7 @@ export SSL_CERT_FILE=$(.venv-dlt/bin/python -c "import certifi;print(certifi.whe
 
 Hinweise
 - `run_id` ist Text (sieht aus wie ein Zeitstempel, dlt würde es sonst als `datetimeoffset` anlegen) — deshalb die Typ-Hints im Skript.
+- `source` und `run_id` in `landing.lead_engine_datei` haben Länge 40 (Hint `precision`), damit der Index `ix_lead_engine_datei_source_run (source, run_id)` möglich ist. Die bestehende Tabelle stellt der on-run-start-Hook `lead_engine_landing_spalten` einmalig um (idempotent, bricht ab, wenn ein Wert länger als 40 Zeichen ist). Beim Neuaufbau legt dlt die Spalten gleich richtig an.
 - Pro Glob ein eigener Resource-Name (`filesystem`, `filesystem_runs`): der Incremental-Zustand ist je Name getrennt.
 - Zustand liegt in `landing._dlt_pipeline_state`; Tabellen nie ohne Zurücksetzen des Zustands löschen (sonst wird nicht neu geladen).
 - Danach: `dbt run --select path:models/base/lead_engine path:models/staging/stg_lead_engine__* path:models/raw_vault/_common`

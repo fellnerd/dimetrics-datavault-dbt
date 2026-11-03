@@ -47,7 +47,8 @@ def _json_text(value) -> str | None:
 
 @dlt.transformer(name="lead_engine_datei", write_disposition="append",
                  primary_key="file_path",
-                 columns={"run_id": {"data_type": "text"},
+                 columns={"source": {"data_type": "text", "precision": 40},
+                          "run_id": {"data_type": "text", "precision": 40},
                           "profil_id": {"data_type": "text"},
                           "profil_treffer": {"data_type": "text"},
                           "file_modified": {"data_type": "timestamp"},
