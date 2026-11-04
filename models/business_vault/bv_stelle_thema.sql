@@ -9,6 +9,7 @@
     Titel und Text kommen normalisiert aus bv_stelle_text (einmalig berechnet, Text auf 4.000 Zeichen gekuerzt wie im Mart).
     Materialisierung: Tabelle (Textsuche ueber alle Stellen x Begriffe, binaerer Vergleich Latin1_General_BIN2 auf kleingeschriebenen Texten).
     Version: 2026-10-26 V1.0 Erste Fassung
+    Version: 2026-11-04 V1.1 Begriffe bis 3 Zeichen ohne Endungen ("bi" traf "bis", "ki"/"ai" nur als ganzes Wort)
 #}
 {{ config(materialized='table', as_columnstore=false, tags=['business_vault']) }}
 
@@ -40,15 +41,16 @@ kandidat as (   -- grober Vorfilter: Begriff kommt irgendwo vor
 direkt as (
     select k.hk_stelle, k.thema, cast(k.begriff as nvarchar(200)) collate database_default as begriff, k.gewicht,
            case when exists (select 1 from endung en
-                              where k.im_titel = 1
+                              where k.im_titel = 1 and (k.laenge >= 4 or en.e = '')
                                 and charindex(case when k.laenge >= 6 then '' else ' ' end + k.begriff + en.e + ' ', k.titel_n) > 0) then 'titel'
                 else 'text' end as fundort
     from kandidat k
     where exists (select 1 from endung en
-                   where (k.im_titel = 1
+                   where (k.laenge >= 4 or en.e = '')
+                     and ((k.im_titel = 1
                           and charindex(case when k.laenge >= 6 then '' else ' ' end + k.begriff + en.e + ' ', k.titel_n) > 0)
                       or (k.im_text = 1
-                          and charindex(case when k.laenge >= 6 then '' else ' ' end + k.begriff + en.e + ' ', k.text_n) > 0))
+                          and charindex(case when k.laenge >= 6 then '' else ' ' end + k.begriff + en.e + ' ', k.text_n) > 0)))
 ),
 
 zusammen as (   -- Zusammenschreibung im Titel: "power bi" trifft auch "PowerBI" (Begriffe mit Leerzeichen, zusammengeschrieben ab 7 Zeichen)

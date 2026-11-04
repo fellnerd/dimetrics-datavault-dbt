@@ -12,10 +12,14 @@
          als Ersatz. Kette: Ort der Stelle -> PLZ/Ort aus dem Impressum der Firma (ort_quelle 'impressum') -> Sitz laut Firmenbuch
          (ort_quelle 'firmenbuch_sitz'); das Bundesland kommt dann ueber den Ort oder die PLZ (ref_lead_engine__ort). Beide Ersatzquellen
          zaehlen in p_region nur halb.
+    Einsatzort (freelancer.at): steht im Text eine Zeile "Einsatzort: ...", gilt sie vor dem Feld "Ort" der Seite: enthaelt sie "remote", ist die Stelle remote;
+         ein bekannter Ort oder ein Bundesland (ref_lead_engine__ort_name, ohne landesweite Angaben) setzt ort (ort_quelle 'einsatzort_text', volle Regionspunkte).
+         Wird nichts erkannt, bleibt das Feld "Ort" der Seite.
     Nicht enthalten (Phase B): Website-Detailtexte, Lead-Status.
     Materialisierung: Tabelle statt View (Business Vault sonst virtuell): die Berechnung (viele Satelliten, Textnormalisierung) wird von
     bv_stelle_thema, bv_stelle_cluster und bv_gelegenheit_score mehrfach gebraucht und waere als View je Abfrage zu teuer.
     Version: 2026-10-26 V1.0 Erste Fassung
+    Version: 2026-11-04 V1.2 Einsatzort aus dem Text (freelancer.at): Zeile "Einsatzort:" -> remote, bekannter Ort/Bundesland (ort_quelle 'einsatzort_text')
     Version: 2026-11-03 V1.1 Ortskette (Impressum-PLZ), Ortsnamen-Normalisierung und Alias-Seed (lead_engine_ort_alias)
 #}
 {{ config(materialized='table', as_columnstore=false, tags=['business_vault']) }}
@@ -139,13 +143,49 @@ basis as (
     ) oc
 ),
 
+einsatz_name as (   -- bekannte Orte/Bundeslaender (ohne landesweite Angaben); binaerer Vergleich auf kleingeschriebenen Texten (schnell)
+    select cast(' ' + n.name_norm + ' ' as nvarchar(300)) collate Latin1_General_BIN2 as pat, n.name_norm, len(n.name_norm) as laenge
+    from {{ ref('ref_lead_engine__ort_name') }} n
+    where len(n.name_norm) >= 4 and n.bundesland is not null and n.bundesland <> 'mehrere'
+),
+
+einsatz_treffer as (
+    select e.hk_stelle, n.name_norm, n.laenge,
+           charindex(n.pat, cast(e.seg as nvarchar(200)) collate Latin1_General_BIN2) as pos
+    from {{ ref('bv_stelle_einsatzort_text') }} e
+    cross join einsatz_name n
+),
+
+einsatz as (   -- je Auftrag: Remote-Hinweis und der erste erkannte Ort/das erste Bundesland im Einsatzort-Text
+    select e.hk_stelle,
+           case when e.seg like '% remote %' or e.seg like '% homeoffice %' then 1 else 0 end as ist_remote,
+           b.name_norm
+    from {{ ref('bv_stelle_einsatzort_text') }} e
+    left join (select hk_stelle, name_norm, row_number() over (partition by hk_stelle order by pos, laenge desc) as rn
+               from einsatz_treffer where pos > 0) b on b.hk_stelle = e.hk_stelle and b.rn = 1
+),
+
+basis2 as (   -- Einsatzort aus dem Text hat Vorrang vor dem Feld "Ort" der Seite
+    select b.hk_stelle, b.quelle, b.stelle_bk, b.titel, b.url, b.text, b.text_quelle, b.veroeffentlicht_roh, b.erste_sichtung, b.letzte_sichtung,
+           b.ist_reposted, b.ist_online, b.vertrag_roh,
+           case when e.ist_remote = 1 then 1 else b.ist_remote_roh end as ist_remote_roh,
+           b.ist_hybrid_roh,
+           case when e.name_norm is not null then upper(left(e.name_norm, 1)) + substring(e.name_norm, 2, 200) else b.ort_roh end as ort_roh,
+           case when e.name_norm is not null then 'einsatzort_text' else b.ort_quelle end as ort_quelle,
+           b.location_area,
+           case when e.name_norm is not null then null else b.plz_roh end as plz_roh,
+           b.land_roh, b.budget_text, b.stundensatz_min, b.reaktionen, b.aus_projektarbeit, b.aus_projekte_suche, b.buyer_name, b.hk_firma
+    from basis b
+    left join einsatz e on e.hk_stelle = b.hk_stelle
+),
+
 ort as (
     select b.*,
            -- Ortsname: Text vor dem ersten Komma/Klammer, klein
            lower(ltrim(rtrim(case when b.ort_roh is null then null
                                   when patindex('%[,(]%', b.ort_roh) > 1 then left(b.ort_roh, patindex('%[,(]%', b.ort_roh) - 1)
                                   else b.ort_roh end))) as ort_name0
-    from basis b
+    from basis2 b
 ),
 
 ort_k as (   -- Ortsname normalisieren: "1010 wien" -> "wien", "wien 2. bezirk" -> "wien", ohne Vorsatz (Grossraum/Raum/Naehe/Bezirk) und Zusatz (Stadt/Umgebung)

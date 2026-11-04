@@ -5,6 +5,7 @@
     "zweite relevante Gelegenheit derselben Firma").
     Grain: 1 Zeile je cluster_key.
     Version: 2026-11-02 V1.0 Initialversion (aus bv_gelegenheit_score ausgelagert)
+    Version: 2026-11-04 V1.2 "reporting" zaehlt nicht als Daten-Begriff im Text (Titeltreffer unveraendert)
     Version: 2026-11-04 V1.1 Vorscore nachgeschaerft (Befund KI-Lauf ki-20261104T0532): Merkmale ist_personalvermittlung, einsteiger_titel, fremdsystem,
                  daten_signal, ki_ohne_daten; Controlling zaehlt nur mit Daten-/Reporting-Signal als Kernthema im Titel. Begriffe im Seed lead_engine_regel.
     Daten-Signal: Treffer im Titel (Thema Datenplattform oder BI und Reporting, oder Microsoft-Stack-Begriff aus ms_signal) oder mindestens zwei verschiedene
@@ -106,7 +107,7 @@ regel_flag as (
 daten_signal as (   -- starkes Daten-Signal: Treffer im Titel (Thema Datenplattform/BI oder Microsoft-Stack) oder mindestens zwei verschiedene Begriffe (Themen + Stack) im Text
     select u.cluster_key,
            max(u.im_titel) as im_titel,
-           count(distinct u.begriff) as anzahl
+           count(distinct case when u.begriff <> 'reporting' then u.begriff end) as anzahl   -- "reporting" allein zaehlt nicht als Begriff
     from (select tr.cluster_key, cast(tr.begriff as nvarchar(200)) collate Latin1_General_BIN2 as begriff, case when tr.fundort = 'titel' then 1 else 0 end as im_titel
           from treffer tr where tr.thema in ('Datenplattform', 'BI und Reporting')
           union all

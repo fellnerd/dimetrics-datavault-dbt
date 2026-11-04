@@ -67,3 +67,16 @@ seeds:
           - accepted_values:
               arguments:
                 values: [wort, prefix, enthaelt]
+
+  - name: lead_engine_thema_ergaenzung
+    description: "Ergaenzende Begriffe der Bewertung (zusaetzlich zu den Themen aus der Landing-Quelle suchprofil): thema, gewicht (Negativ: negativ), nur_titel, aktiv. Ein Begriff aus suchprofil hat Vorrang vor dem Seed."
+    config:
+      schema: seed
+      column_types:
+        begriff: nvarchar(200)
+        thema: nvarchar(100)
+    columns:
+      - name: begriff
+        data_tests: [unique, not_null]
+      - name: thema
+        data_tests: [not_null]
