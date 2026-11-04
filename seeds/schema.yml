@@ -34,3 +34,36 @@ seeds:
         description: "1 = Ortsangabe bedeutet Remote/Homeoffice."
       - name: bemerkung
         description: "Art des Eintrags."
+
+  - name: lead_engine_gewicht_startwerte
+    description: "Startwerte der Vorscore-Gewichte (bereich, schluessel, punkte); die Gewichte aus der Landing-Quelle suchprofil ueberschreiben sie je (bereich, schluessel), siehe ref_lead_engine__gewicht."
+    config:
+      schema: seed
+      column_types:
+        bereich: nvarchar(50)
+        schluessel: nvarchar(100)
+        bemerkung: nvarchar(300)
+
+  - name: lead_engine_regel
+    description: "Begriffslisten der Vorscore-Regeln: vermittler_firma/vermittler_text (Personalvermittlung), titel_abschlag (Einsteiger im Titel), fremd_system (fremde Systeme), ms_signal (Microsoft-Stack als Datensignal). modus: wort (ganzes Wort), prefix (Wortanfang), enthaelt (Teilzeichenkette; Firmenname bzw. Text)."
+    config:
+      schema: seed
+      column_types:
+        regel: nvarchar(50)
+        begriff: nvarchar(200)
+        modus: nvarchar(20)
+        bemerkung: nvarchar(200)
+    columns:
+      - name: regel
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [vermittler_firma, vermittler_text, titel_abschlag, fremd_system, ms_signal]
+      - name: begriff
+        data_tests: [not_null]
+      - name: modus
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [wort, prefix, enthaelt]

@@ -8,6 +8,7 @@
     Schluessel: firma_id (varchar, Hash des Masters); PK-Index, dazu Index auf bester_vorscore.
     Quellen: bv_gelegenheit_score, bv_stelle_cluster, bv_stelle_thema, Firmenbuch-Satelliten
     Version: 2026-11-04 V1.0 Aus lead_firmen_v (V1.0) als Tabelle materialisiert
+    Version: 2026-11-04 V1.1 ist_personalvermittlung (Merkmal der Firma, nicht in der View)
 #}
 {{ config(materialized='table', as_columnstore=false, tags=['report'],
           post_hook=["{{ lead_engine_tabelle_schluessel('firma_id', 'varchar(32)', 'bester_vorscore', 1) }}", "{{ lead_engine_tabelle_schluessel('firma_id', 'varchar(32)', 'bester_vorscore', 2) }}", "{{ lead_engine_tabelle_schluessel('firma_id', 'varchar(32)', 'bester_vorscore', 3) }}"]) }}
@@ -41,6 +42,7 @@ je_firma as (
         max(g.vorscore)                                                             as bester_vorscore,
         max(g.ist_konzern)                                                          as ist_konzern,
         max(g.ist_vermittler)                                                       as ist_vermittler,
+        max(g.ist_personalvermittlung)                                              as ist_personalvermittlung,
         min(g.erste_sichtung)                                                       as erste_sichtung,
         max(g.letzte_sichtung)                                                      as letzte_sichtung
     from g
@@ -143,6 +145,7 @@ select
     t.gelegenheiten                                                                 as beste_gelegenheiten,
     fbk.ereignis_text                                                               as firmenbuch_ereignisse,
     st.status, st.datum                                                             as status_am,
+    jf.ist_personalvermittlung,
     cast(getdate() as datetime2(6))                                                 as dss_load_date,
     cast('bv_gelegenheit_score' as varchar(50))                                     as dss_record_source
 from g b

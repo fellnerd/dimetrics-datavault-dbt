@@ -5,11 +5,13 @@
       grund 'neu'        : noch kein KI-Urteil
       grund 'geaendert'  : seit dem letzten Urteil hat ein Satellit einer Stelle des Clusters eine neue Zeile bekommen (Inhalt geaendert oder neue Quelle);
                            die Sichtungs-Satelliten zaehlen nicht (die aendern sich bei jedem Lauf). Vorberechnet in lead_gelegenheiten.inhalt_geaendert_am.
+    Dubletten (gleicher Titel vom gleichen Auftraggeber, innerhalb von 30 Tagen veroeffentlicht) erscheinen nur einmal (die fruehere), siehe lead_gelegenheiten.ist_dublette.
     Sortierung der Ausgabe: vorscore absteigend (ORDER BY im Abruf). Schluessel gelegenheit_id (varchar, erste Spalte).
     Duenne View auf lead_gelegenheiten und lead_firmen (Tageslauf). Live nur: Ausschluss bereits bewerteter Gelegenheiten ueber
     landing.lead_engine_ki_bewertung (juengstes Urteil je Gelegenheit).
     Quellen: lead_gelegenheiten, lead_firmen, landing.lead_engine_ki_bewertung (live)
     Version: 2026-11-03 V1.0 Erste Fassung
+    Version: 2026-11-04 V1.2 ohne Dubletten
     Version: 2026-11-04 V1.1 Duenne View auf den Tabellen (MCP-Laufzeit), inhalt_geaendert_am vorberechnet
 #}
 {{ config(materialized='view', tags=['report']) }}
@@ -44,5 +46,6 @@ from {{ ref('lead_gelegenheiten') }} g
 left join ki on ki.gelegenheit_id = g.gelegenheit_id
 left join {{ ref('lead_firmen') }} f on f.firma_id = g.firma_id
 where g.vorscore >= 40
+  and g.ist_dublette = 0
   and coalesce(g.status, '') not in ('kein fit', 'erledigt')
   and (ki.gelegenheit_id is null or g.inhalt_geaendert_am > ki.bewertet_am)

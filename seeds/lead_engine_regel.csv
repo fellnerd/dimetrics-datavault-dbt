@@ -1,0 +1,34 @@
+regel,begriff,modus,bemerkung
+vermittler_firma,epunkt,enthaelt,Personalvermittler (Firmenname)
+vermittler_firma,kern engineering careers,enthaelt,Personalvermittler (Firmenname)
+vermittler_firma,michael page,enthaelt,Personalvermittler (Firmenname)
+vermittler_firma,ivm technical consultants,enthaelt,Personalvermittler (Firmenname)
+vermittler_firma,schulmeister management consulting,enthaelt,Personalvermittler (Firmenname)
+vermittler_firma,trescon,enthaelt,Personalvermittler (Firmenname)
+vermittler_text,job id,enthaelt,Textmuster Personalvermittlung
+vermittler_text,für unseren kunden,enthaelt,Textmuster Personalvermittlung
+vermittler_text,im auftrag unseres klienten,enthaelt,Textmuster Personalvermittlung
+titel_abschlag,junior,prefix,Einsteiger im Titel
+titel_abschlag,praktik,prefix,Praktikum/Praktikant im Titel
+titel_abschlag,internship,prefix,Einsteiger im Titel
+titel_abschlag,trainee,prefix,Einsteiger im Titel
+titel_abschlag,werkstudent,prefix,Einsteiger im Titel
+titel_abschlag,lehrling,prefix,Einsteiger im Titel
+fremd_system,databricks,wort,Fremdes System
+fremd_system,aws,wort,Fremdes System
+fremd_system,snowflake,wort,Fremdes System (nur ohne Microsoft-Stack)
+fremd_system,sap bo,wort,Fremdes System
+fremd_system,servicenow,wort,Fremdes System
+fremd_system,react,wort,Fremdes System
+fremd_system,spring boot,wort,Fremdes System
+fremd_system,sap analytics cloud,wort,Fremdes System (SAP-Analytics-Familie)
+fremd_system,sap bw,wort,Fremdes System (SAP-Analytics-Familie)
+fremd_system,sap business data cloud,wort,Fremdes System (SAP-Analytics-Familie)
+ms_signal,power bi,wort,Microsoft-Stack
+ms_signal,powerbi,wort,Microsoft-Stack
+ms_signal,fabric,wort,Microsoft-Stack
+ms_signal,azure,wort,Microsoft-Stack
+ms_signal,sql server,wort,Microsoft-Stack
+ms_signal,synapse,wort,Microsoft-Stack
+ms_signal,data factory,wort,Microsoft-Stack
+ms_signal,dax,wort,Microsoft-Stack

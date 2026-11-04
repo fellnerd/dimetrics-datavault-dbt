@@ -31,7 +31,7 @@ models:
       - name: cluster_key
         data_tests: [not_null]
   - name: bv_gelegenheit_score
-    description: "Eine Zeile je Cluster: Lead-Typ, alle Bausteine einzeln, Vorscore, Begründung. Ausgeschlossene bleiben mit Kennzeichen."
+    description: "Eine Zeile je Cluster: Lead-Typ, alle Bausteine einzeln, Vorscore, Begründung. Ausgeschlossene bleiben mit Kennzeichen. Abzüge für Personalvermittlung (B1/B2/C), Einsteiger-Titel und Fremdsysteme; KI ohne Datenbezug (kein Treffer in Datenplattform, BI und Reporting oder Microsoft-Stack) ist auf ki_ohne_daten_max gedeckelt."
     columns:
       - name: cluster_key
         data_tests: [not_null, unique]
@@ -53,7 +53,7 @@ models:
         data_tests: [not_null, unique]
 
   - name: bv_gelegenheit_basis
-    description: "Hilfstabelle für bv_gelegenheit_score: je Cluster Merkmale, Themen-Summe, Negativ-Treffer und Lead-Typ (einmal berechnet)."
+    description: "Hilfstabelle für bv_gelegenheit_score: je Cluster Merkmale, Themen-Summe, Negativ-Treffer und Lead-Typ (einmal berechnet). Regel-Merkmale aus dem Seed lead_engine_regel: ist_personalvermittlung, einsteiger_titel, fremdsystem, daten_signal, ki_ohne_daten; Controlling zählt nur mit Daten-/Reporting-Signal als Kernthema im Titel."
     columns:
       - name: cluster_key
         data_tests: [not_null, unique]

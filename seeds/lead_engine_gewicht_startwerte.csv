@@ -42,3 +42,7 @@ anzahl,B,8,
 anzahl,C,3,
 parameter,lange_offen_tage,45,Tage online fuer lange offen (nicht im Sheet)
 parameter,konzern_mitarbeiter,2500,Mitarbeiter ab denen Konzern gilt (nicht im Sheet)
+abzug,personalvermittlung,-15,Personalvermittler (Firma oder Textmuster) bei Lead-Typ B1/B2/C
+abzug,einsteiger_im_titel,-15,junior; praktikum; internship; trainee; werkstudent; lehrling im Titel
+abzug,fremdsystem,-15,fremdes System im Titel oder dominierend im Text ohne Microsoft-Stack
+parameter,ki_ohne_daten_max,50,hoechster Vorscore bei KI-Treffer ohne Datenplattform/BI/Stack-Treffer

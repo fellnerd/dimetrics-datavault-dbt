@@ -113,8 +113,8 @@ models:
 
   - name: lead_gelegenheiten
     description: |
-      Tabelle (Tageslauf) hinter lead_gelegenheiten_v und lead_ki_offen_v: dieselben Spalten ohne ki_*, zusätzlich master_firma_bk, firma_id und
-      inhalt_geaendert_am. Wird nicht direkt abgefragt (der MCP liest die Views).
+      Tabelle (Tageslauf) hinter lead_gelegenheiten_v und lead_ki_offen_v: dieselben Spalten ohne ki_*, zusätzlich master_firma_bk, firma_id,
+      inhalt_geaendert_am, ist_personalvermittlung und ist_dublette (1 = gleicher Titel vom gleichen Auftraggeber, innerhalb von 30 Tagen früher veröffentlicht). Wird nicht direkt abgefragt (der MCP liest die Views).
     columns:
       - name: gelegenheit_id
         data_tests: [not_null, unique]
@@ -151,12 +151,12 @@ models:
               arguments:
                 values: ['A1', 'A2', 'A3', 'B1', 'B2', 'C']
       - name: vorscore
-        description: "Vorbewertung 0–100 (Summe der Bausteine p_thema bis p_abzug; kann durch Abzüge unter 0 fallen, Minimum -25). Ab ca. 55 für die Tagesliste interessant (A ab 55, B ab 60, C ab 50)."
+        description: "Vorbewertung 0–100 (Summe der Bausteine p_thema bis p_abzug; kann durch Abzüge unter 0 fallen, Minimum -60). Ab ca. 55 für die Tagesliste interessant (A ab 55, B ab 60, C ab 50)."
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
               arguments:
-                min_value: -25
+                min_value: -60
                 max_value: 100
       - name: p_thema
         description: "Baustein Thema, 0–35: Passung zu den Kernthemen (Datenplattform, BI und Reporting, KI, Controlling); Treffer im Titel zählen doppelt. Ohne Kernthema im Titel höchstens 20."

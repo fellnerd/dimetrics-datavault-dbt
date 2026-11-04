@@ -11,7 +11,8 @@
     Negativbegriff im Titel nimmt sie ebenfalls (zusaetzlich zum Abzug).
     Passung Firmengroesse: 20-500 Mitarbeiter oder Groessenklasse klein/mittel (Jahresabschluss, Firmenbuch); Konzern/gross bleibt neutral (nur der Konzern-Abzug).
     Hybrid-Bonus: wenn hybrid und die Region unter 10 Punkten liegt (Gewichte-Blatt).
-    Bausteine: p_thema (0-35), p_typ, p_region (0-20; bei Ersatz-Ort ort_quelle <> 'stelle' halbiert), p_frische (0-15), p_passung (0-5), p_bonus (bis +15), p_abzug (bis -25); vorscore = Summe.
+    Bausteine: p_thema (0-35), p_typ, p_region (0-20; bei Ersatz-Ort ort_quelle <> 'stelle' halbiert), p_frische (0-15), p_passung (0-5), p_bonus (bis +15), p_abzug (Konzern, Negativbegriff, Personalvermittlung, Einsteiger-Titel, Fremdsystem); vorscore = Summe, bei KI ohne Datenbezug gedeckelt (parameter ki_ohne_daten_max).
+    Version: 2026-11-04 V1.1 Abzuege Personalvermittlung/Einsteiger/Fremdsystem, Deckel fuer KI ohne Datenbezug (Befund KI-Lauf ki-20261104T0532)
     Materialisierung: Tabelle (statt View): lead_gelegenheiten_v und lead_firmen_v lesen sie mehrfach, als View waere jede Abfrage zu teuer.
     Version: 2026-10-26 V1.0 Erste Fassung
 #}
@@ -29,6 +30,10 @@ with par as (   -- skalare Parameter aus den Gewichten
         max(case when bereich = 'bonus'   and schluessel = 'zweites_signal_60_tage' then punkte end) as b_zweite,
         max(case when bereich = 'abzug'   and schluessel = 'konzern'             then punkte end) as a_konzern,
         max(case when bereich = 'abzug'   and schluessel = 'negativ_im_titel'      then punkte end) as a_negativ,
+        max(case when bereich = 'abzug'   and schluessel = 'personalvermittlung'   then punkte end) as a_vermittler,
+        max(case when bereich = 'abzug'   and schluessel = 'einsteiger_im_titel'   then punkte end) as a_einsteiger,
+        max(case when bereich = 'abzug'   and schluessel = 'fremdsystem'           then punkte end) as a_fremd,
+        max(case when bereich = 'parameter' and schluessel = 'ki_ohne_daten_max'   then punkte end) as s_ki_max,
         max(case when bereich = 'parameter' and schluessel = 'lange_offen_tage'   then punkte end) as s_lange_offen,
         max(case when bereich = 'parameter' and schluessel = 'konzern_mitarbeiter' then punkte end) as s_konzern,
         max(case when bereich = 'region'  and schluessel = 'hybrid_bonus'        then punkte end) as r_hybrid
@@ -70,7 +75,11 @@ punkte as (
               + case when b.reaktionen is not null and b.reaktionen <= 3 then p.b_reaktionen else 0 end
               + case when coalesce(z.andere, 0) > 0 and b.thema_roh > 0 then p.b_zweite else 0 end as int) as p_bonus,
            cast(case when b.mitarbeiter > p.s_konzern or b.konzern_hinweis is not null or b.fremde_jobdomain is not null then p.a_konzern else 0 end
-              + case when b.negativ_titel = 1 then p.a_negativ else 0 end as int) as p_abzug,
+              + case when b.negativ_titel = 1 then p.a_negativ else 0 end
+              + case when b.ist_personalvermittlung = 1 and b.lead_typ in ('B1', 'B2', 'C') then p.a_vermittler else 0 end
+              + case when b.einsteiger_titel = 1 and b.negativ_titel = 0 then p.a_einsteiger else 0 end   -- praktikum/lehrling stehen schon als Negativbegriff
+              + case when b.fremdsystem = 1 then p.a_fremd else 0 end as int) as p_abzug,
+           p.s_ki_max as ki_max,
            cast(case when b.mitarbeiter > p.s_konzern or b.konzern_hinweis is not null or b.fremde_jobdomain is not null then 1 else 0 end as int) as ist_konzern
     from basis b
     cross join par p
@@ -101,8 +110,11 @@ select
     ausschluss_grund_neu as ausschluss_grund,
     status_roh as status, status_am,
     p_thema, coalesce(p_typ, 0) as p_typ, p_region, p_frische, p_passung, p_bonus, p_abzug,
-    p_thema + coalesce(p_typ, 0) + p_region + p_frische + p_passung + p_bonus + p_abzug as vorscore,
-    themen, kern_im_titel, negativ_titel, ist_konzern,
+    -- KI-Treffer ohne Datenplattform/BI/Stack-Treffer: Vorscore gedeckelt (gilt auch fuer Freelance-Auftraege A1)
+    case when ki_ohne_daten = 1 and p_thema + coalesce(p_typ, 0) + p_region + p_frische + p_passung + p_bonus + p_abzug > ki_max
+         then cast(ki_max as int)
+         else p_thema + coalesce(p_typ, 0) + p_region + p_frische + p_passung + p_bonus + p_abzug end as vorscore,
+    themen, kern_im_titel, negativ_titel, ist_konzern, ist_personalvermittlung, einsteiger_titel, fremdsystem, ki_ohne_daten, daten_signal,
     concat_ws(' · ',
         case when p_thema > 0 then 'Thema: ' + coalesce(left(themen, 120), '') end,
         case when ist_remote = 1 then 'remote' else coalesce(nullif(region_gruppe, 'unbekannt'), 'Region unbekannt') end,
@@ -110,7 +122,11 @@ select
              case when datediff(day, veroeffentlicht_am, cast(getdate() as date)) <= 0 then 'heute' else 'vor ' + cast(datediff(day, veroeffentlicht_am, cast(getdate() as date)) as varchar(10)) + ' Tagen' end end,
         case when reaktionen is not null then cast(reaktionen as varchar(10)) + ' Reaktionen' end,
         case when ist_konzern = 1 then 'Konzern' end,
-        case when negativ_titel = 1 then 'Negativbegriff im Titel' end) as begruendung_kurz,
+        case when negativ_titel = 1 then 'Negativbegriff im Titel' end,
+        case when ist_personalvermittlung = 1 and lead_typ in ('B1', 'B2', 'C') then 'Personalvermittlung' end,
+        case when einsteiger_titel = 1 and negativ_titel = 0 then 'Einsteiger-Titel' end,
+        case when fremdsystem = 1 then 'Fremdsystem' end,
+        case when ki_ohne_daten = 1 then 'KI ohne Datenbezug (Vorscore gedeckelt)' end) as begruendung_kurz,
     titel, text, text_quelle, url, veroeffentlicht_am, datum_geschaetzt, erste_sichtung, letzte_sichtung, tage_online,
     vertragsart, ist_remote, ist_hybrid, ort, ort_quelle, bundesland, land, region_gruppe, plz,
     master_firma_bk, firma_name, ist_vermittler, mitarbeiter, branche, technologien, budget_text, stundensatz_min, reaktionen, ist_online
