@@ -46,3 +46,4 @@ abzug,personalvermittlung,-15,Personalvermittler (Firma oder Textmuster) bei Lea
 abzug,einsteiger_im_titel,-15,junior; praktikum; internship; trainee; werkstudent; lehrling im Titel
 abzug,fremdsystem,-15,fremdes System im Titel oder dominierend im Text ohne Microsoft-Stack
 parameter,ki_ohne_daten_max,50,hoechster Vorscore bei KI-Treffer ohne Datenplattform/BI/Stack-Treffer
+parameter,controlling_daten_begriffe,4,Controlling im Titel ist nur Kernthema mit Daten-Treffer im Titel oder so vielen verschiedenen Daten-/BI-/Stack-Begriffen im Text

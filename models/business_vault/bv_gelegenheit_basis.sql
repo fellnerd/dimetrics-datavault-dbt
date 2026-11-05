@@ -5,6 +5,7 @@
     "zweite relevante Gelegenheit derselben Firma").
     Grain: 1 Zeile je cluster_key.
     Version: 2026-11-02 V1.0 Initialversion (aus bv_gelegenheit_score ausgelagert)
+    Version: 2026-11-05 V1.3 Controlling zaehlt als Kernthema im Titel nur mit Daten-Treffer im Titel oder mindestens controlling_daten_begriffe (Gewicht, 4) Begriffen im Text; fuer den KI-Deckel bleiben es 2
     Version: 2026-11-04 V1.2 "reporting" zaehlt nicht als Daten-Begriff im Text (Titeltreffer unveraendert)
     Version: 2026-11-04 V1.1 Vorscore nachgeschaerft (Befund KI-Lauf ki-20261104T0532): Merkmale ist_personalvermittlung, einsteiger_titel, fremdsystem,
                  daten_signal, ki_ohne_daten; Controlling zaehlt nur mit Daten-/Reporting-Signal als Kernthema im Titel. Begriffe im Seed lead_engine_regel.
@@ -29,6 +30,7 @@ with par as (   -- skalare Parameter aus den Gewichten
         max(case when bereich = 'abzug'   and schluessel = 'negativ_im_titel'      then punkte end) as a_negativ,
         max(case when bereich = 'parameter' and schluessel = 'lange_offen_tage'   then punkte end) as s_lange_offen,
         max(case when bereich = 'parameter' and schluessel = 'konzern_mitarbeiter' then punkte end) as s_konzern,
+        max(case when bereich = 'parameter' and schluessel = 'controlling_daten_begriffe' then punkte end) as s_ctrl_begriffe,
         max(case when bereich = 'region'  and schluessel = 'hybrid_bonus'        then punkte end) as r_hybrid
     from {{ ref('ref_lead_engine__gewicht') }}
 ),
@@ -124,7 +126,7 @@ basis as (
            coalesce(ts.roh, 0) as thema_roh, ts.themen,
            -- Kernthema im Titel: Daten/BI/KI immer; Controlling nur mit Daten-/Reporting-Signal (reine Controlling-Stellen zaehlen nicht wie BI)
            case when coalesce(ts.kern_titel_daten_ki, 0) = 1
-                  or (coalesce(ts.kern_titel_controlling, 0) = 1 and (coalesce(ds.im_titel, 0) = 1 or coalesce(ds.anzahl, 0) >= 2)) then 1 else 0 end as kern_im_titel,
+                  or (coalesce(ts.kern_titel_controlling, 0) = 1 and (coalesce(ds.im_titel, 0) = 1 or coalesce(ds.anzahl, 0) >= (select s_ctrl_begriffe from par))) then 1 else 0 end as kern_im_titel,
            cast(case when coalesce(ds.im_titel, 0) = 1 or coalesce(ds.anzahl, 0) >= 2 then 1 else 0 end as int) as daten_signal,
            cast(coalesce(ds.im_titel, 0) as int) as daten_titel, cast(coalesce(ds.anzahl, 0) as int) as daten_anzahl,
            cast(case when coalesce(ts.hat_ki, 0) = 1 and coalesce(ds.im_titel, 0) = 0 and coalesce(ds.anzahl, 0) < 2 then 1 else 0 end as int) as ki_ohne_daten,
