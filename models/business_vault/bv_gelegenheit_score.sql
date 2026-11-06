@@ -12,6 +12,7 @@
     Passung Firmengroesse: 20-500 Mitarbeiter oder Groessenklasse klein/mittel (Jahresabschluss, Firmenbuch); Konzern/gross bleibt neutral (nur der Konzern-Abzug).
     Hybrid-Bonus: wenn hybrid und die Region unter 10 Punkten liegt (Gewichte-Blatt).
     Bausteine: p_thema (0-35), p_typ, p_region (0-20; bei Ersatz-Ort (ort_quelle impressum, firmenbuch_sitz) halbiert), p_frische (0-15), p_passung (0-5), p_bonus (bis +15), p_abzug (Konzern, Negativbegriff, Personalvermittlung, Einsteiger-Titel, Fremdsystem); vorscore = Summe, bei KI ohne Datenbezug gedeckelt (parameter ki_ohne_daten_max).
+    Version: 2026-11-06 V1.2 Vorscore bei 100 gekappt
     Version: 2026-11-04 V1.1 Abzuege Personalvermittlung/Einsteiger/Fremdsystem, Deckel fuer KI ohne Datenbezug (Befund KI-Lauf ki-20261104T0532)
     Materialisierung: Tabelle (statt View): lead_gelegenheiten_v und lead_firmen_v lesen sie mehrfach, als View waere jede Abfrage zu teuer.
     Version: 2026-10-26 V1.0 Erste Fassung
@@ -111,8 +112,10 @@ select
     status_roh as status, status_am,
     p_thema, coalesce(p_typ, 0) as p_typ, p_region, p_frische, p_passung, p_bonus, p_abzug,
     -- KI-Treffer ohne Datenplattform/BI/Stack-Treffer: Vorscore gedeckelt (gilt auch fuer Freelance-Auftraege A1)
+    -- Skala 0-100: nach oben bei 100 gekappt (die Bausteine p_* bleiben ungekappt, ihre Summe kann darueber liegen)
     case when ki_ohne_daten = 1 and p_thema + coalesce(p_typ, 0) + p_region + p_frische + p_passung + p_bonus + p_abzug > ki_max
          then cast(ki_max as int)
+         when p_thema + coalesce(p_typ, 0) + p_region + p_frische + p_passung + p_bonus + p_abzug > 100 then 100
          else p_thema + coalesce(p_typ, 0) + p_region + p_frische + p_passung + p_bonus + p_abzug end as vorscore,
     themen, kern_im_titel, negativ_titel, ist_konzern, ist_personalvermittlung, einsteiger_titel, fremdsystem, ki_ohne_daten, daten_signal,
     concat_ws(' · ',

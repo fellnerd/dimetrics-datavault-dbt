@@ -151,7 +151,7 @@ models:
               arguments:
                 values: ['A1', 'A2', 'A3', 'B1', 'B2', 'C']
       - name: vorscore
-        description: "Vorbewertung 0–100 (Summe der Bausteine p_thema bis p_abzug; kann durch Abzüge unter 0 fallen, Minimum -60). Ab ca. 55 für die Tagesliste interessant (A ab 55, B ab 60, C ab 50)."
+        description: "Vorbewertung, Skala höchstens 100 (Summe der Bausteine p_thema bis p_abzug, nach oben bei 100 gekappt – die Summe der p_*-Spalten kann darüber liegen; kann durch Abzüge unter 0 fallen, Minimum -60). Ab ca. 55 für die Tagesliste interessant (A ab 55, B ab 60, C ab 50)."
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
@@ -330,7 +330,7 @@ models:
         description: "Eindeutiger Schlüssel der Gelegenheit (Text); derselbe wie in lead_gelegenheiten_v. Damit das Urteil in die Eingangstabelle schreiben."
         data_tests: [not_null, unique]
       - name: vorscore
-        description: "Vorbewertung 0–100 (siehe lead_gelegenheiten_v)."
+        description: "Vorbewertung, höchstens 100 (siehe lead_gelegenheiten_v)."
         data_tests: [not_null]
       - name: lead_typ
         description: "Art des Leads: A1 freelancer.at | A2 Projekt über Vermittler | A3 Ausschreibung (TED) | B1 Überbrückungsbedarf | B2 sonstige Firmenstelle | C Partner."
